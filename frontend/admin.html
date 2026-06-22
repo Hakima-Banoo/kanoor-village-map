@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Panel — Kanoor Village Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#1a73e8;--blue-d:#1557b0;--green:#1e8e3e;--red:#d93025;--yellow:#f9ab00;
+  --text:#202124;--mid:#5f6368;--light:#80868b;--border:#e8eaed;--bg:#f8f9fa;--white:#fff;
+  --shadow:0 1px 3px rgba(60,64,67,.3),0 4px 8px rgba(60,64,67,.15);
+  --shadow-lg:0 4px 16px rgba(60,64,67,.2);
+  --radius:16px;--trans:all .25s cubic-bezier(.4,0,.2,1);
+}
+body{font-family:'Roboto',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* LOGIN */
+.login-screen{
+  min-height:100vh;background:linear-gradient(135deg,#0f2044 0%,#1a3a6e 50%,#1565c0 100%);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.login-card{
+  background:white;border-radius:24px;padding:40px;width:100%;max-width:380px;
+  box-shadow:0 24px 80px rgba(0,0,0,.35);text-align:center;
+  animation:slideUp .5s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.login-icon{font-size:48px;margin-bottom:12px}
+.login-title{font-family:'Google Sans',sans-serif;font-size:24px;font-weight:600;margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--mid);margin-bottom:28px}
+.login-input{
+  width:100%;padding:13px 18px;border:1.5px solid var(--border);border-radius:12px;
+  font-family:'Roboto',sans-serif;font-size:15px;outline:none;margin-bottom:14px;
+  transition:var(--trans);
+}
+.login-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,115,232,.1)}
+.login-btn{
+  width:100%;padding:13px;background:var(--blue);color:white;border:none;border-radius:12px;
+  font-family:'Google Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;
+  transition:var(--trans);
+}
+.login-btn:hover{background:var(--blue-d);transform:translateY(-1px);box-shadow:0 4px 14px rgba(26,115,232,.4)}
+.login-err{color:var(--red);font-size:13px;margin-bottom:12px;display:none;background:#fce8e6;padding:8px 14px;border-radius:8px}
+.login-hint{font-size:11px;color:var(--light);margin-top:16px}
+
+/* ADMIN APP */
+#adminApp{display:none}
+.top-bar{
+  background:linear-gradient(135deg,#0f2044,#1565c0);color:white;
+  padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;box-shadow:var(--shadow);
+}
+.top-bar-brand{font-family:'Google Sans',sans-serif;font-size:18px;font-weight:600;display:flex;align-items:center;gap:10px}
+.top-bar-right{display:flex;align-items:center;gap:12px}
+.map-link,.logout-btn{
+  padding:8px 16px;border-radius:20px;font-family:'Roboto',sans-serif;font-size:13px;
+  font-weight:500;cursor:pointer;transition:var(--trans);text-decoration:none;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.map-link{background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.3)}
+.map-link:hover{background:rgba(255,255,255,.25)}
+.logout-btn{background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:none}
+.logout-btn:hover{background:rgba(255,255,255,.2)}
+
+.admin-body{max-width:900px;margin:0 auto;padding:28px 20px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+.stat-card{
+  background:white;border-radius:var(--radius);padding:20px;
+  box-shadow:var(--shadow);display:flex;align-items:center;gap:16px;
+  transition:var(--trans);
+}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.si-pending{background:#fff8e1}.si-approved{background:#e8f5e9}.si-rejected{background:#fce8e6}
+.stat-info .num{font-family:'Google Sans',sans-serif;font-size:28px;font-weight:600;line-height:1}
+.stat-info .lbl{font-size:13px;color:var(--mid);margin-top:2px}
+
+/* TABS */
+.tabs{display:flex;gap:0;background:white;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+.tab-btn{
+  flex:1;padding:14px;border:none;background:none;cursor:pointer;font-family:'Google Sans',sans-serif;
+  font-size:14px;font-weight:500;color:var(--mid);transition:var(--trans);
+  border-bottom:2px solid transparent;position:relative;
+}
+.tab-btn:hover{background:var(--bg);color:var(--text)}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);background:#f8f9ff}
+.tab-badge{
+  display:inline-block;background:var(--yellow);color:#202124;
+  font-size:11px;padding:1px 7px;border-radius:20px;margin-left:6px;font-weight:600;
+}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* SUBMISSION CARDS */
+.sub-card{
+  background:white;border-radius:var(--radius);padding:20px;margin-bottom:14px;
+  box-shadow:var(--shadow);transition:var(--trans);border-left:4px solid var(--border);
+}
+.sub-card:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+.sub-card.approved{border-left-color:var(--green)}
+.sub-card.rejected{border-left-color:var(--red)}
+.sub-card.pending{border-left-color:var(--yellow)}
+
+.sub-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.sub-name{font-family:'Google Sans',sans-serif;font-size:16px;font-weight:600}
+.sub-meta{font-size:12px;color:var(--mid);margin-top:3px;line-height:1.5}
+.status-chip{
+  padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:0.5px;flex-shrink:0;
+}
+.chip-pending{background:#fff8e1;color:#b26a00}
+.chip-approved{background:#e8f5e9;color:#1e8e3e}
+.chip-rejected{background:#fce8e6;color:#d93025}
+
+.sub-desc{font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:12px;padding:10px;background:var(--bg);border-radius:8px}
+.sub-coords{font-size:12px;color:var(--light);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.sub-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{
+  padding:9px 18px;border-radius:20px;border:none;cursor:pointer;font-family:'Roboto',sans-serif;
+  font-size:13px;font-weight:500;transition:var(--trans);display:inline-flex;align-items:center;gap:6px;
+  text-decoration:none;
+}
+.btn-approve{background:#e8f5e9;color:var(--green)}.btn-approve:hover{background:#c8e6c9;transform:translateY(-1px)}
+.btn-reject{background:#fce8e6;color:var(--red)}.btn-reject:hover{background:#f9c5c0;transform:translateY(-1px)}
+.btn-maps{background:var(--bg);color:var(--text);border:1px solid var(--border)}.btn-maps:hover{background:#e8eaed}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--light)}
+.empty-icon{font-size:48px;margin-bottom:14px}
+.empty-text{font-size:15px;margin-bottom:6px;color:var(--mid)}
+.empty-sub{font-size:13px}
+
+/* FOOTER */
+.admin-footer{
+  text-align:center;padding:20px;font-size:12px;color:var(--light);
+  border-top:1px solid var(--border);margin-top:40px;
+}
+.admin-footer a{color:var(--blue);text-decoration:none}
+
+@media(max-width:600px){
+  .stats-grid{grid-template-columns:1fr}
+  .tabs{flex-direction:column}
+}
+.ann-form{background:white;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:20px}
+.fg2-admin{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.fg-admin{margin-bottom:13px}
+.fg-admin label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--mid);margin-bottom:5px}
+.fg-admin input,.fg-admin select,.fg-admin textarea{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Roboto',sans-serif;font-size:14px;color:var(--text);background:#fafafa;outline:none;transition:all .2s}
+.fg-admin input:focus,.fg-admin select:focus,.fg-admin textarea:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(26,115,232,.1)}
+.fg-admin textarea{resize:vertical;min-height:70px}
+.ann-card{background:#fff;border-radius:var(--radius);padding:16px 18px;margin-bottom:10px;box-shadow:var(--shadow);display:flex;align-items:flex-start;gap:12px;border-left:4px solid var(--blue)}
+.ann-card.urgent{border-left-color:var(--red)}
+.ann-card.event{border-left-color:#f9a825}
+.ann-card.prayer{border-left-color:#00897b}
+.ann-card-ico{font-size:22px}
+.ann-card-body{flex:1}
+.ann-card-title{font-weight:600;font-size:14px;margin-bottom:3px}
+.ann-card-msg{font-size:13px;color:var(--mid);margin-bottom:6px}
+.ann-card-meta{font-size:11px;color:var(--light)}
+.ann-card-del{background:#fce8e6;color:var(--red);border:none;border-radius:16px;padding:6px 14px;font-size:12px;cursor:pointer;transition:background .2s}
+.ann-card-del:hover{background:#f9c5c0}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-icon">🔐</div>
+    <h1 class="login-title">Admin Login</h1>
+    <p class="login-sub">Kanoor Village Map · Review Dashboard</p>
+    <div class="login-err" id="loginErr">Incorrect password. Please try again.</div>
+    <input type="password" class="login-input" id="pwInput" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">🔓 Login</button>
+    <p class="login-hint">Demo password: <strong>kanoor2024</strong></p>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="adminApp">
+  <div class="top-bar">
+    <div class="top-bar-brand">🏔️ Kanoor Village — Admin</div>
+    <div class="top-bar-right">
+      <a href="index.html" class="map-link">🗺️ View Map</a>
+      <button class="logout-btn" onclick="doLogout()">← Logout</button>
+    </div>
+  </div>
+
+  <div class="admin-body">
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon si-pending">⏳</div><div class="stat-info"><div class="num" id="sPending">0</div><div class="lbl">Pending Review</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-approved">✅</div><div class="stat-info"><div class="num" id="sApproved">0</div><div class="lbl">Approved</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-rejected">❌</div><div class="stat-info"><div class="num" id="sRejected">0</div><div class="lbl">Rejected</div></div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('pending',this)">Pending <span class="tab-badge" id="pendBadge">0</span></button>
+      <button class="tab-btn" onclick="switchTab('approved',this)">Approved</button>
+      <button class="tab-btn" onclick="switchTab('rejected',this)">Rejected</button>
+      <button class="tab-btn" onclick="switchTab('announcements',this)">📢 Announcements</button>
+    </div>
+
+    <div id="tab-pending" class="tab-content active"></div>
+    <div id="tab-approved" class="tab-content"></div>
+    <div id="tab-rejected" class="tab-content"></div>
+    <div id="tab-announcements" class="tab-content">
+      <div class="ann-form">
+        <h3 style="font-family:'Google Sans',sans-serif;font-size:16px;font-weight:500;margin-bottom:14px">📢 Post a new announcement</h3>
+        <div class="fg2-admin">
+          <div class="fg-admin"><label>Title</label><input type="text" id="annTitleInput" placeholder="e.g. Eid Prayers, Road Closure..."/></div>
+          <div class="fg-admin"><label>Type</label>
+            <select id="annTypeInput">
+              <option value="info">📢 Info</option>
+              <option value="urgent">🚨 Urgent</option>
+              <option value="event">🎉 Event</option>
+              <option value="prayer">🕌 Prayer</option>
+            </select>
+          </div>
+        </div>
+        <div class="fg-admin"><label>Message</label><textarea id="annMsgInput" placeholder="e.g. Eid prayers will be held at 6 AM at Kanoor Imambargah..."></textarea></div>
+        <div class="fg-admin"><label>Expires after (days, optional)</label><input type="number" id="annExpiryInput" placeholder="e.g. 7" min="1"/></div>
+        <button class="btn-approve" onclick="postAnnouncement()" style="padding:10px 24px">📢 Post Announcement</button>
+      </div>
+      <h3 style="font-family:'Google Sans',sans-serif;font-size:16px;font-weight:500;margin:20px 0 14px">Active announcements</h3>
+      <div id="annList"></div>
+    </div>
+
+    <div class="admin-footer">
+      Built by <strong>Hakima Banoo</strong> &nbsp;·&nbsp;
+      <a href="mailto:hakimabanoo.jk.csrl@gmail.com">hakimabanoo.jk.csrl@gmail.com</a>
+      &nbsp;·&nbsp; Kanoor Village, Kargil, Ladakh
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// KANOOR VILLAGE MAP — Admin Panel
+// Real JWT-authenticated API calls, with localStorage fallback
+// for offline / no-backend use.
+// Built by Hakima Banoo
+// ════════════════════════════════════════════════════════
+
+const API_BASE = location.origin.startsWith('http') ? '/api' : null;
+let backendOnline = false;
+let authToken = sessionStorage.getItem('kanoor_admin_token') || null;
+
+async function apiGet(path, useAuth){
+  if(!API_BASE) return null;
+  try{
+    const headers={};
+    if(useAuth && authToken) headers['Authorization']='Bearer '+authToken;
+    const res=await fetch(API_BASE+path,{headers});
+    const data=await res.json().catch(()=>({}));
+    return {ok:res.ok, status:res.status, data};
+  }catch{ return null; }
+}
+async function apiPost(path, body, useAuth){
+  if(!API_BASE) return null;
+  try{
+    const headers={'Content-Type':'application/json'};
+    if(useAuth && authToken) headers['Authorization']='Bearer '+authToken;
+    const res=await fetch(API_BASE+path,{method:'POST',headers,body:JSON.stringify(body||{})});
+    const data=await res.json().catch(()=>({}));
+    return {ok:res.ok, status:res.status, data};
+  }catch{ return null; }
+}
+async function apiPut(path, useAuth){
+  if(!API_BASE) return null;
+  try{
+    const headers={};
+    if(useAuth && authToken) headers['Authorization']='Bearer '+authToken;
+    const res=await fetch(API_BASE+path,{method:'PUT',headers});
+    const data=await res.json().catch(()=>({}));
+    return {ok:res.ok, status:res.status, data};
+  }catch{ return null; }
+}
+async function apiDelete(path, useAuth){
+  if(!API_BASE) return null;
+  try{
+    const headers={};
+    if(useAuth && authToken) headers['Authorization']='Bearer '+authToken;
+    const res=await fetch(API_BASE+path,{method:'DELETE',headers});
+    const data=await res.json().catch(()=>({}));
+    return {ok:res.ok, status:res.status, data};
+  }catch{ return null; }
+}
+
+// ── LOGIN ──────────────────────────────────────────────────
+async function doLogin(){
+  const username='admin';
+  const pw=document.getElementById('pwInput').value;
+  const err=document.getElementById('loginErr');
+  const loginBtn=document.querySelector('.login-btn');
+
+  if(API_BASE){
+    if(loginBtn){loginBtn.disabled=true;loginBtn.textContent='Logging in...'}
+    const res=await apiPost('/auth/login',{username,password:pw});
+    if(loginBtn){loginBtn.disabled=false;loginBtn.textContent='🔓 Login'}
+
+    if(res && res.ok && res.data.token){
+      backendOnline=true;
+      authToken=res.data.token;
+      sessionStorage.setItem('kanoor_admin_token',authToken);
+      sessionStorage.setItem('kanoor_admin','1');
+      document.getElementById('loginScreen').style.display='none';
+      document.getElementById('adminApp').style.display='block';
+      loadAdmin();
+      return;
+    }
+    if(res){
+      // Backend reachable and gave a real answer (e.g. wrong password)
+      err.textContent = (res.data && res.data.error) || 'Incorrect password.';
+      err.style.display='block';
+      document.getElementById('pwInput').value='';
+      return;
+    }
+    // res === null means the backend genuinely couldn't be reached — fall through to offline mode
+  }
+
+  // Offline fallback — only used when no backend is running at all
+  if(pw==='kanoor2024'){
+    backendOnline=false;
+    sessionStorage.setItem('kanoor_admin','1');
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('adminApp').style.display='block';
+    loadAdmin();
+  } else {
+    err.textContent='Incorrect password. (No backend detected — using offline demo password: kanoor2024)';
+    err.style.display='block';
+    document.getElementById('pwInput').value='';
+  }
+}
+
+function doLogout(){
+  sessionStorage.removeItem('kanoor_admin');
+  sessionStorage.removeItem('kanoor_admin_token');
+  location.reload();
+}
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function catLabel(cat){
+  const m={bridge:'🌉 Bridge',school:'🏫 School',mosque:'🕌 Mosque',imambargah:'🏛️ Imambargah',
+    health:'🏥 Health',nature:'🌊 Nature',mohalla:'🏘️ Mohalla',shop:'🛍️ Shop',park:'🌿 Park',govt:'🏛️ Govt',resort:'🏡 Resort'};
+  return m[cat]||cat;
+}
+
+// Normalize backend place shape (name/category/description/createdAt) to the
+// shape the existing render() function expects (name/cat/desc/submittedAt).
+function normalizePlace(p){
+  return {
+    id:p.id, name:p.name, cat:p.category, desc:p.description,
+    lat:p.lat, lng:p.lng, mohalla:p.mohalla, submitter:p.submitter,
+    submittedAt:p.createdAt||p.submittedAt||new Date().toISOString(),
+    icon:p.icon
+  };
+}
+
+// ── LOAD ADMIN DATA ──────────────────────────────────────────
+async function loadAdmin(){
+  if(API_BASE && authToken){
+    const res=await apiGet('/admin/submissions', true);
+    if(res && res.ok){
+      backendOnline=true;
+      const pending=res.data.pending.map(normalizePlace);
+      const approved=res.data.approved.map(normalizePlace);
+      const rejected=res.data.rejected.map(normalizePlace);
+
+      document.getElementById('sPending').textContent=pending.length;
+      document.getElementById('sApproved').textContent=approved.length;
+      document.getElementById('sRejected').textContent=rejected.length;
+      document.getElementById('pendBadge').textContent=pending.length;
+
+      render('pending',pending);
+      render('approved',approved);
+      render('rejected',rejected);
+      await loadAnnouncements();
+      return;
+    }
+    if(res && res.status===401){
+      // token expired/invalid — force re-login
+      doLogout();
+      return;
+    }
+  }
+
+  // Offline fallback
+  backendOnline=false;
+  const pending=JSON.parse(localStorage.getItem('kanoor_pending')||'[]');
+  const approved=JSON.parse(localStorage.getItem('kanoor_approved')||'[]');
+  const rejected=JSON.parse(localStorage.getItem('kanoor_rejected')||'[]');
+
+  document.getElementById('sPending').textContent=pending.length;
+  document.getElementById('sApproved').textContent=approved.length;
+  document.getElementById('sRejected').textContent=rejected.length;
+  document.getElementById('pendBadge').textContent=pending.length;
+
+  render('pending',pending.map(p=>({...p,cat:p.cat||p.category,desc:p.desc||p.description})));
+  render('approved',approved.map(p=>({...p,cat:p.cat||p.category,desc:p.desc||p.description})));
+  render('rejected',rejected.map(p=>({...p,cat:p.cat||p.category,desc:p.desc||p.description})));
+  renderAnnouncementsOffline();
+}
+
+// ── ANNOUNCEMENTS ──────────────────────────────────────────
+async function loadAnnouncements(){
+  const res=await apiGet('/announcements');
+  const anns = (res && res.ok) ? res.data.announcements : [];
+  renderAnnList(anns, true);
+}
+function renderAnnouncementsOffline(){
+  const anns=JSON.parse(localStorage.getItem('kanoor_announcements')||'[]');
+  const now=new Date();
+  const active=anns.filter(a=>a.active!==false && (!a.expiresAt || new Date(a.expiresAt)>now));
+  renderAnnList(active, false);
+}
+function renderAnnList(active, isBackend){
+  const el=document.getElementById('annList');
+  if(!active.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">📢</div><div class="empty-text">No active announcements</div><div class="empty-sub">Post one above — it will show as a banner on the village map.</div></div>`;
+    return;
+  }
+  const icons={info:'📢',urgent:'🚨',event:'🎉',prayer:'🕌'};
+  el.innerHTML=active.map(a=>`
+    <div class="ann-card ${a.type!=='info'?a.type:''}">
+      <div class="ann-card-ico">${icons[a.type]||'📢'}</div>
+      <div class="ann-card-body">
+        <div class="ann-card-title">${a.title}</div>
+        <div class="ann-card-msg">${a.message}</div>
+        <div class="ann-card-meta">Posted ${new Date(a.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}${a.expiresAt?' · Expires '+new Date(a.expiresAt).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):''}</div>
+      </div>
+      <button class="ann-card-del" onclick="deleteAnnouncement('${a.id}', ${isBackend})">Remove</button>
+    </div>`).join('');
+}
+
+async function postAnnouncement(){
+  const title=document.getElementById('annTitleInput').value.trim();
+  const type=document.getElementById('annTypeInput').value;
+  const message=document.getElementById('annMsgInput').value.trim();
+  const expiryDays=parseInt(document.getElementById('annExpiryInput').value)||null;
+
+  if(!title||!message){ alert('Please enter a title and message.'); return; }
+
+  if(backendOnline){
+    const res=await apiPost('/admin/announcements',{title,message,type,expiresInDays:expiryDays}, true);
+    if(res && res.ok){
+      clearAnnForm();
+      await loadAnnouncements();
+      return;
+    }
+    alert((res && res.data && res.data.error) || 'Failed to post announcement.');
+    return;
+  }
+
+  // Offline fallback
+  const anns=JSON.parse(localStorage.getItem('kanoor_announcements')||'[]');
+  const ann={
+    id:Date.now(), title, message, type, active:true,
+    createdAt:new Date().toISOString(),
+    expiresAt: expiryDays ? new Date(Date.now()+expiryDays*86400000).toISOString() : null,
+    postedBy:'Admin'
+  };
+  anns.unshift(ann);
+  localStorage.setItem('kanoor_announcements',JSON.stringify(anns));
+  clearAnnForm();
+  renderAnnouncementsOffline();
+}
+function clearAnnForm(){
+  document.getElementById('annTitleInput').value='';
+  document.getElementById('annMsgInput').value='';
+  document.getElementById('annExpiryInput').value='';
+}
+
+async function deleteAnnouncement(id, isBackend){
+  if(isBackend && backendOnline){
+    await apiDelete('/admin/announcements/'+id, true);
+    await loadAnnouncements();
+    return;
+  }
+  let anns=JSON.parse(localStorage.getItem('kanoor_announcements')||'[]');
+  anns=anns.map(a=>String(a.id)===String(id)?{...a,active:false}:a);
+  localStorage.setItem('kanoor_announcements',JSON.stringify(anns));
+  renderAnnouncementsOffline();
+}
+
+// ── RENDER SUBMISSION CARDS ──────────────────────────────────
+function render(type,items){
+  const el=document.getElementById('tab-'+type);
+  if(!items.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">${type==='pending'?'📭':'✅'}</div><div class="empty-text">No ${type} submissions</div><div class="empty-sub">Submissions will appear here once added by villagers.</div></div>`;
+    return;
+  }
+  el.innerHTML=items.map(p=>`
+    <div class="sub-card ${type}" id="card-${p.id}">
+      <div class="sub-head">
+        <div>
+          <div class="sub-name">${p.icon||'📍'} ${p.name}</div>
+          <div class="sub-meta">
+            ${catLabel(p.cat)} &nbsp;·&nbsp; By: <strong>${p.submitter||'Anonymous'}</strong>
+            &nbsp;·&nbsp; ${p.mohalla?'📍 '+p.mohalla+' &nbsp;·&nbsp; ':''} ${new Date(p.submittedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}
+          </div>
+        </div>
+        <span class="status-chip chip-${type}">${type==='approved'?'✅ Approved':type==='rejected'?'❌ Rejected':'⏳ Pending'}</span>
+      </div>
+      <div class="sub-desc">${p.desc||'No description provided.'}</div>
+      <div class="sub-coords">📌 Lat: <strong>${p.lat}</strong> &nbsp;·&nbsp; Lng: <strong>${p.lng}</strong></div>
+      <div class="sub-actions">
+        ${type==='pending'?`<button class="btn btn-approve" onclick="approve('${p.id}')">✅ Approve</button><button class="btn btn-reject" onclick="reject('${p.id}')">❌ Reject</button>`:''}
+        <a class="btn btn-maps" href="https://www.google.com/maps?q=${p.lat},${p.lng}" target="_blank">📍 View on Google Maps</a>
+      </div>
+    </div>`).join('');
+}
+
+async function approve(id){
+  if(backendOnline){
+    const res=await apiPut('/admin/submissions/'+id+'/approve', true);
+    if(!res || !res.ok){ alert((res&&res.data&&res.data.error)||'Failed to approve.'); return; }
+    loadAdmin();
+    return;
+  }
+  let pending=JSON.parse(localStorage.getItem('kanoor_pending')||'[]');
+  let approved=JSON.parse(localStorage.getItem('kanoor_approved')||'[]');
+  const p=pending.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  p.status='approved';p.approvedAt=new Date().toISOString();
+  approved.push(p);
+  pending=pending.filter(x=>String(x.id)!==String(id));
+  localStorage.setItem('kanoor_pending',JSON.stringify(pending));
+  localStorage.setItem('kanoor_approved',JSON.stringify(approved));
+  loadAdmin();
+}
+async function reject(id){
+  if(backendOnline){
+    const res=await apiPut('/admin/submissions/'+id+'/reject', true);
+    if(!res || !res.ok){ alert((res&&res.data&&res.data.error)||'Failed to reject.'); return; }
+    loadAdmin();
+    return;
+  }
+  let pending=JSON.parse(localStorage.getItem('kanoor_pending')||'[]');
+  let rejected=JSON.parse(localStorage.getItem('kanoor_rejected')||'[]');
+  const p=pending.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  p.status='rejected';p.rejectedAt=new Date().toISOString();
+  rejected.push(p);
+  pending=pending.filter(x=>String(x.id)!==String(id));
+  localStorage.setItem('kanoor_pending',JSON.stringify(pending));
+  localStorage.setItem('kanoor_rejected',JSON.stringify(rejected));
+  loadAdmin();
+}
+
+// ── BOOT ──────────────────────────────────────────────────
+window.onload=()=>{
+  if(sessionStorage.getItem('kanoor_admin')==='1'){
+    authToken=sessionStorage.getItem('kanoor_admin_token')||null;
+    backendOnline = !!authToken;
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('adminApp').style.display='block';
+    loadAdmin();
+  }
+};
+</script>
+</body>
+</html>

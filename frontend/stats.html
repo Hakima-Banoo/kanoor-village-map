@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Village Statistics — Kanoor, Kargil</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#1a73e8"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#1a73e8;--green:#188038;--red:#d93025;--amber:#e37400;
+  --text:#202124;--mid:#5f6368;--light:#80868b;--border:#e8eaed;--bg:#f8f9fa;
+  --sh:0 1px 3px rgba(60,64,67,.2),0 2px 6px rgba(60,64,67,.1);
+}
+body{font-family:'Roboto',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+.topnav{
+  background:linear-gradient(135deg,#060e24,#0f3070 55%,#1a73e8);
+  color:#fff;padding:0 24px;height:60px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+.nav-brand{font-family:'Google Sans',sans-serif;font-size:17px;font-weight:600;display:flex;align-items:center;gap:10px}
+.nav-links{display:flex;gap:8px}
+.nav-link{padding:7px 14px;border-radius:20px;background:rgba(255,255,255,.12);color:#fff;text-decoration:none;font-size:13px;transition:background .2s}
+.nav-link:hover{background:rgba(255,255,255,.22)}
+
+.page{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
+
+.page-title{font-family:'Google Sans',sans-serif;font-size:28px;font-weight:600;color:var(--text);margin-bottom:4px}
+.page-sub{font-size:14px;color:var(--mid);margin-bottom:28px}
+
+/* KPI CARDS */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:32px}
+.kpi{background:#fff;border-radius:16px;padding:20px;box-shadow:var(--sh);border-top:4px solid transparent;transition:transform .2s}
+.kpi:hover{transform:translateY(-3px)}
+.kpi-ico{font-size:28px;margin-bottom:8px}
+.kpi-n{font-family:'Google Sans',sans-serif;font-size:32px;font-weight:600;line-height:1;margin-bottom:4px}
+.kpi-l{font-size:13px;color:var(--mid)}
+.kpi.blue{border-top-color:#1a73e8}.kpi.green{border-top-color:#188038}
+.kpi.amber{border-top-color:#e37400}.kpi.red{border-top-color:#d93025}
+.kpi.purple{border-top-color:#7c4dff}.kpi.teal{border-top-color:#00897b}
+
+/* CHARTS GRID */
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:32px}
+.chart-card{background:#fff;border-radius:16px;padding:20px;box-shadow:var(--sh)}
+.chart-title{font-family:'Google Sans',sans-serif;font-size:16px;font-weight:500;margin-bottom:4px}
+.chart-sub{font-size:12px;color:var(--mid);margin-bottom:16px}
+.chart-wrap{position:relative;height:220px}
+
+/* MOHALLA TABLE */
+.table-card{background:#fff;border-radius:16px;padding:20px;box-shadow:var(--sh);margin-bottom:20px}
+.table-title{font-family:'Google Sans',sans-serif;font-size:16px;font-weight:500;margin-bottom:16px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 12px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--mid);border-bottom:2px solid var(--border)}
+td{padding:11px 12px;border-bottom:1px solid #f1f3f4;font-size:14px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8f9fa}
+.bar{height:8px;border-radius:4px;background:var(--blue);display:inline-block;vertical-align:middle;margin-left:8px;opacity:.75}
+
+/* PROGRESS BARS */
+.pbar-section{background:#fff;border-radius:16px;padding:20px;box-shadow:var(--sh);margin-bottom:20px}
+.pbar-title{font-family:'Google Sans',sans-serif;font-size:16px;font-weight:500;margin-bottom:16px}
+.pbar-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.pbar-label{width:130px;font-size:13px;flex-shrink:0}
+.pbar-track{flex:1;height:10px;background:#f1f3f4;border-radius:5px;overflow:hidden}
+.pbar-fill{height:100%;border-radius:5px;transition:width 1s ease}
+.pbar-num{width:32px;text-align:right;font-size:13px;font-weight:500;color:var(--mid)}
+
+/* FOOTER */
+.page-footer{text-align:center;padding:24px;font-size:12px;color:var(--light);border-top:1px solid var(--border);margin-top:20px}
+.page-footer a{color:var(--blue);text-decoration:none}
+</style>
+<body>
+
+<nav class="topnav">
+  <div class="nav-brand">📊 Kanoor Village Statistics</div>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">🗺️ Back to Map</a>
+    <a href="admin.html" class="nav-link">🔐 Admin</a>
+  </div>
+</nav>
+
+<div class="page">
+  <h1 class="page-title">Village at a Glance</h1>
+  <p class="page-sub">📍 Kanoor Village · Sankoo Sub-District · Kargil, Ladakh · PIN 194103 &nbsp;·&nbsp; <span id="dataSource">⚪ Checking connection...</span></p>
+
+  <!-- KPI GRID -->
+  <div class="kpis" id="kpiGrid"></div>
+
+  <!-- CHARTS -->
+  <div class="charts">
+    <div class="chart-card">
+      <div class="chart-title">Places by Category</div>
+      <div class="chart-sub">Distribution of all mapped locations</div>
+      <div class="chart-wrap"><canvas id="catChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Facilities per Mohalla</div>
+      <div class="chart-sub">Number of mapped places in each area</div>
+      <div class="chart-wrap"><canvas id="mohChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Education Coverage</div>
+      <div class="chart-sub">Schools relative to mohalla count</div>
+      <div class="chart-wrap"><canvas id="eduChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Mosque Distribution</div>
+      <div class="chart-sub">Religious facilities across mohallas</div>
+      <div class="chart-wrap"><canvas id="relChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- MOHALLA TABLE -->
+  <div class="table-card">
+    <div class="table-title">📍 Mohalla-wise breakdown</div>
+    <table id="mohTable">
+      <thead>
+        <tr>
+          <th>Mohalla</th>
+          <th>Mosque</th>
+          <th>Schools</th>
+          <th>Health</th>
+          <th>Shops</th>
+          <th>Total Places</th>
+          <th>Coverage</th>
+        </tr>
+      </thead>
+      <tbody id="mohTbody"></tbody>
+    </table>
+  </div>
+
+  <!-- CATEGORY PROGRESS -->
+  <div class="pbar-section">
+    <div class="pbar-title">📊 Category breakdown</div>
+    <div id="pbars"></div>
+  </div>
+
+  <div class="page-footer">
+    🏔️ Built by <strong>Hakima Banoo</strong> ·
+    <a href="mailto:hakimabanoo.jk.csrl@gmail.com">hakimabanoo.jk.csrl@gmail.com</a>
+    · Kanoor Village, Kargil, Ladakh
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// KANOOR VILLAGE MAP — Statistics Dashboard
+// Loads live data from the backend API when available,
+// falls back to bundled data + localStorage when offline.
+// Built by Hakima Banoo
+// ════════════════════════════════════════════════════════
+
+const API_BASE = location.origin.startsWith('http') ? '/api' : null;
+
+const PLACES = [
+  {n:"Zambakha Mohalla",c:"mohalla",m:"Zambakha"},{n:"Saserpo Mohalla",c:"mohalla",m:"Saserpo"},
+  {n:"Yougma Yourgo Mohalla",c:"mohalla",m:"Yougma Yourgo"},{n:"Gongma Yourgo Mohalla",c:"mohalla",m:"Gongma Yourgo"},
+  {n:"Grong Mohalla",c:"mohalla",m:"Grong"},{n:"Bargong Mohalla",c:"mohalla",m:"Bargong"},
+  {n:"Saltong Mohalla",c:"mohalla",m:"Saltong"},{n:"Scarchey Mohalla",c:"mohalla",m:"Scarchey"},
+  {n:"Chanigund Mohalla",c:"mohalla",m:"Chanigund"},{n:"Gongma Kanoor Mohalla",c:"mohalla",m:"Gongma Kanoor"},
+  {n:"Zanging Mohalla",c:"mohalla",m:"Zanging"},
+  {n:"Kanoor Main Bridge",c:"bridge",m:"Main Road"},{n:"Kanoor–Trespone Bridge",c:"bridge",m:"North End"},{n:"Kanoor–Tambis Bridge",c:"bridge",m:"Central"},
+  {n:"Middle School Yourgo",c:"school",m:"Yougma Yourgo"},{n:"Middle School Zanging",c:"school",m:"Zanging"},
+  {n:"Primary School Zambakha",c:"school",m:"Zambakha"},{n:"Primary School Saltong",c:"school",m:"Saltong"},
+  {n:"Sub Medical Health Centre",c:"health",m:"Saserpo"},
+  {n:"Kanoor Imambargah",c:"imambargah",m:"Central"},
+  {n:"Masjid Zambakha",c:"mosque",m:"Zambakha"},{n:"Masjid Saserpo",c:"mosque",m:"Saserpo"},
+  {n:"Masjid Yourgo",c:"mosque",m:"Yourgo"},{n:"Masjid Grong",c:"mosque",m:"Grong"},
+  {n:"Masjid Bargong",c:"mosque",m:"Bargong"},{n:"Masjid Saltong",c:"mosque",m:"Saltong"},
+  {n:"Masjid Scarchey",c:"mosque",m:"Scarchey"},{n:"Masjid Chanigund",c:"mosque",m:"Chanigund"},
+  {n:"Masjid Zanging",c:"mosque",m:"Zanging"},
+  {n:"Rkong Saltong Waterfall",c:"nature",m:"Saltong"},{n:"Saltong Picnic Spot",c:"nature",m:"Saltong"},
+  {n:"Suru River View Point",c:"nature",m:"Central"},
+  {n:"Children's Park Scarchey",c:"park",m:"Scarchey"},{n:"Ahuna Resort",c:"resort",m:"Scarchey"},
+  {n:"Kanoor Gram Panchayat Office",c:"govt",m:"Bargong"},{n:"Kanoor Bus Stop",c:"govt",m:"Central"},
+  {n:"Chicken & Meat Shop",c:"shop",m:"Main Road"},{n:"General Stores Row",c:"shop",m:"Main Road"},
+  {n:"Pharmacy / Medical Store",c:"shop",m:"Saserpo"},
+];
+
+async function loadStatsData(){
+  if(API_BASE){
+    try{
+      const res = await fetch(API_BASE+'/places');
+      if(res.ok){
+        const data = await res.json();
+        const statusEl=document.getElementById('dataSource');
+        if(statusEl) statusEl.textContent='🟢 Live data from server';
+        return data.places.map(p=>({n:p.name, c:p.category, m:p.mohalla||''}));
+      }
+    }catch{}
+  }
+  const statusEl=document.getElementById('dataSource');
+  if(statusEl) statusEl.textContent='⚪ Offline data (no backend detected)';
+  try{
+    const x=JSON.parse(localStorage.getItem('kanoor_approved')||'[]');
+    return [...PLACES, ...x.map(p=>({n:p.name||p.n, c:p.cat||p.c, m:p.mohalla||p.m||''}))];
+  }catch{ return [...PLACES]; }
+}
+
+async function boot(){
+  const ALL = await loadStatsData();
+
+  const byCat = {};
+  ALL.forEach(p => { byCat[p.c] = (byCat[p.c]||0)+1 });
+
+  const byMoh = {};
+  ALL.forEach(p => {
+    if(!p.m)return;
+    if(!byMoh[p.m]) byMoh[p.m]={total:0,mosque:0,school:0,health:0,shop:0};
+    byMoh[p.m].total++;
+    if(p.c==='mosque')byMoh[p.m].mosque++;
+    if(p.c==='school')byMoh[p.m].school++;
+    if(p.c==='health')byMoh[p.m].health++;
+    if(p.c==='shop')byMoh[p.m].shop++;
+  });
+
+  const kpis = [
+    {ico:'📍',n:ALL.length,l:'Total Places Mapped',cls:'blue'},
+    {ico:'🏘️',n:Object.keys(byMoh).length,l:'Mohallas Covered',cls:'green'},
+    {ico:'🕌',n:byCat.mosque||0,l:'Mosques',cls:'purple'},
+    {ico:'🏫',n:byCat.school||0,l:'Schools',cls:'amber'},
+    {ico:'🌉',n:byCat.bridge||0,l:'Bridges',cls:'teal'},
+    {ico:'🏥',n:byCat.health||0,l:'Health Facilities',cls:'red'},
+  ];
+
+  document.getElementById('kpiGrid').innerHTML = kpis.map(k=>
+    `<div class="kpi ${k.cls}"><div class="kpi-ico">${k.ico}</div><div class="kpi-n">${k.n}</div><div class="kpi-l">${k.l}</div></div>`
+  ).join('');
+
+  const catLabels = {mohalla:'Mohallas',bridge:'Bridges',school:'Schools',mosque:'Mosques',imambargah:'Imambargah',health:'Health',nature:'Nature',park:'Parks',shop:'Shops',govt:'Govt',resort:'Resort'};
+  const catColors = ['#1a73e8','#188038','#e37400','#d93025','#7c4dff','#00897b','#0097a7','#6d4c41','#546e7a','#c62828','#2e7d32'];
+
+  if(Object.keys(byCat).length){
+    new Chart(document.getElementById('catChart'),{
+      type:'doughnut',
+      data:{ labels:Object.keys(byCat).map(k=>catLabels[k]||k), datasets:[{data:Object.values(byCat),backgroundColor:catColors,borderWidth:2,borderColor:'#fff'}] },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}}}}
+    });
+  }
+
+  const mohNames = Object.keys(byMoh).sort((a,b)=>byMoh[b].total-byMoh[a].total).slice(0,8);
+  if(mohNames.length){
+    new Chart(document.getElementById('mohChart'),{
+      type:'bar',
+      data:{ labels:mohNames, datasets:[{label:'Places',data:mohNames.map(m=>byMoh[m].total),backgroundColor:'#1a73e8',borderRadius:6}] },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+    });
+  }
+
+  new Chart(document.getElementById('eduChart'),{
+    type:'polarArea',
+    data:{
+      labels:['Primary Schools','Middle Schools','Mohallas Covered','Bridges','Health Centres'],
+      datasets:[{data:[byCat.school?2:0,byCat.school?2:0,Object.keys(byMoh).length,byCat.bridge||0,byCat.health||0],backgroundColor:['#1a73e8aa','#188038aa','#e37400aa','#d93025aa','#7c4dffaa']}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}}}}
+  });
+
+  new Chart(document.getElementById('relChart'),{
+    type:'bar',
+    data:{
+      labels:['Mosques','Imambargah','Mohallas w/ mosque'],
+      datasets:[{label:'Count',data:[byCat.mosque||0,byCat.imambargah||0,byCat.mosque||0],backgroundColor:['#3949ab','#7b1fa2','#1565c0'],borderRadius:6}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+  });
+
+  const maxT = Math.max(1, ...Object.values(byMoh).map(m=>m.total));
+  document.getElementById('mohTbody').innerHTML = Object.entries(byMoh)
+    .sort((a,b)=>b[1].total-a[1].total)
+    .map(([name,d])=>`<tr>
+      <td><strong>${name}</strong></td>
+      <td>${d.mosque?'🕌 '+d.mosque:'—'}</td>
+      <td>${d.school?'🏫 '+d.school:'—'}</td>
+      <td>${d.health?'🏥':'—'}</td>
+      <td>${d.shop?'🛍️ '+d.shop:'—'}</td>
+      <td>${d.total}</td>
+      <td><span class="bar" style="width:${Math.round(d.total/maxT*100)}px"></span> ${Math.round(d.total/maxT*100)}%</td>
+    </tr>`).join('');
+
+  const catOrder = ['mohalla','mosque','school','bridge','nature','govt','shop','health','park','imambargah','resort'];
+  const pColors = {mohalla:'#f57c00',mosque:'#3949ab',school:'#188038',bridge:'#5c6bc0',nature:'#00897b',govt:'#1a73e8',shop:'#8e24aa',health:'#d93025',park:'#558b2f',imambargah:'#7b1fa2',resort:'#f4511e'};
+  const maxC = Math.max(1, ...Object.values(byCat));
+  document.getElementById('pbars').innerHTML = catOrder.filter(c=>byCat[c]).map(c=>`
+    <div class="pbar-row">
+      <div class="pbar-label">${catLabels[c]||c}</div>
+      <div class="pbar-track"><div class="pbar-fill" style="width:${Math.round(byCat[c]/maxC*100)}%;background:${pColors[c]||'#1a73e8'}"></div></div>
+      <div class="pbar-num">${byCat[c]}</div>
+    </div>`).join('');
+}
+
+boot();
+</script>
+</body>
+</html>
