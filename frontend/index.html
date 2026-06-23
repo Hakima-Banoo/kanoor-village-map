@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Kanoor Village Map — Kargil, Ladakh 🏔️</title>
+<meta name="description" content="Interactive map of Kanoor Village, Sankoo, Kargil, Ladakh. Built by Hakima Banoo."/>
+<meta name="theme-color" content="#1a73e8"/>
+<link rel="manifest" href="manifest.json"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Kanoor Map"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu&family=Noto+Sans+Devanagari&family=Noto+Serif+Tibetan&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#1a73e8;--blue-d:#1557b0;--green:#188038;--red:#d93025;--amber:#e37400;--purple:#7c4dff;
+  --text:#202124;--mid:#5f6368;--light:#80868b;--border:#e8eaed;--bg:#f8f9fa;
+  --sh1:0 1px 3px rgba(60,64,67,.25),0 3px 8px rgba(60,64,67,.12);
+  --sh2:0 2px 8px 2px rgba(60,64,67,.15),0 1px 3px rgba(60,64,67,.25);
+  --sh3:0 8px 28px rgba(60,64,67,.22);
+}
+html,body{height:100%;overflow:hidden;font-family:'Roboto',sans-serif;background:#e5e3df}
+
+/* ══ SPLASH ══════════════════════════════ */
+#splash{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#060e24,#0c2050 30%,#1050a0 65%,#1a73e8);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 1s,visibility 1s}
+#splash.gone{opacity:0;visibility:hidden;pointer-events:none}
+.sp-stars{position:absolute;inset:0}
+.sp-star{position:absolute;background:#fff;border-radius:50%;animation:twinkle var(--d) var(--dl) infinite}
+@keyframes twinkle{0%,100%{opacity:.15;transform:scale(1)}50%{opacity:1;transform:scale(1.6)}}
+.sp-mts{position:absolute;bottom:0;left:0;right:0}
+.sp-cnt{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;margin-bottom:100px;text-align:center}
+.sp-mo{font-size:90px;animation:spfloat 3s ease-in-out infinite;filter:drop-shadow(0 12px 40px rgba(0,0,0,.6))}
+@keyframes spfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+.sp-tit{font-family:'Google Sans',sans-serif;font-size:46px;font-weight:600;color:#fff;letter-spacing:-1.5px;margin-top:14px;text-shadow:0 4px 20px rgba(0,0,0,.4)}
+.sp-loc{font-size:13px;color:rgba(255,255,255,.6);letter-spacing:4px;text-transform:uppercase;margin:6px 0 30px}
+.sp-bar{width:240px;height:3px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden;margin-bottom:14px}
+.sp-prg{height:100%;background:linear-gradient(90deg,#60a5fa,#fff);animation:prg 2.8s ease forwards}
+@keyframes prg{0%{width:0}100%{width:100%}}
+.sp-by{font-size:12px;color:rgba(255,255,255,.45);line-height:1.8}
+.sp-by strong{color:rgba(255,255,255,.85)}
+.sp-by a{color:rgba(120,180,255,.9);text-decoration:none}
+/* ══ install banner ══ */
+#installBanner{
+  position:fixed;bottom:0;left:0;right:0;z-index:8000;
+  background:linear-gradient(135deg,#060e24,#1a73e8);color:#fff;
+  padding:14px 20px;display:none;align-items:center;justify-content:space-between;gap:12px;
+  box-shadow:0 -4px 20px rgba(0,0,0,.3);
+}
+#installBanner.show{display:flex}
+.ib-txt{font-size:14px;flex:1}
+.ib-txt strong{display:block;font-family:'Google Sans',sans-serif;font-size:15px}
+.ib-btns{display:flex;gap:8px}
+.ib-install{padding:9px 18px;background:#fff;color:var(--blue);border:none;border-radius:20px;font-family:'Google Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer}
+.ib-dismiss{padding:9px 14px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:20px;font-size:13px;cursor:pointer}
+
+/* ══ APP SHELL ══════════════════════════════ */
+#app{display:flex;height:100vh;width:100vw;position:relative}
+#map{flex:1;height:100%;z-index:1;background:#e5e3df}
+.leaflet-container{background:#e5e3df!important}
+.leaflet-control-attribution,.leaflet-control-zoom,.leaflet-bottom.leaflet-right{display:none!important}
+
+/* ══ SIDEBAR ═════════════════════════════════ */
+.sb{width:380px;height:100%;background:#fff;z-index:400;flex-shrink:0;display:flex;flex-direction:column;box-shadow:2px 0 16px rgba(0,0,0,.14);transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.sb.hide{transform:translateX(-380px);position:absolute}
+.sb-hd{flex-shrink:0;padding:16px 18px 14px;background:linear-gradient(135deg,#060e24,#0f3070 55%,#1a73e8);color:#fff;position:relative;overflow:hidden}
+.sb-hd::before,.sb-hd::after{content:'';position:absolute;border-radius:50%;background:rgba(255,255,255,.04)}
+.sb-hd::before{width:200px;height:200px;top:-80px;right:-60px}
+.sb-hd::after{width:120px;height:120px;bottom:-40px;left:-30px}
+.sb-name{font-family:'Google Sans',sans-serif;font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px;position:relative;z-index:1}
+.sb-addr{font-size:11px;opacity:.65;margin:2px 0 12px;position:relative;z-index:1}
+.sb-kpis{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(255,255,255,.12);padding-top:10px;position:relative;z-index:1}
+.kpi{text-align:center;padding:3px 0}
+.kpi:not(:last-child){border-right:1px solid rgba(255,255,255,.12)}
+.kpi-n{font-family:'Google Sans',sans-serif;font-size:19px;font-weight:600;display:block}
+.kpi-l{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.5px}
+/* AI badge in sidebar */
+.sb-ai-badge{background:rgba(124,77,255,.25);border:1px solid rgba(124,77,255,.5);color:#d0b8ff;font-size:11px;padding:4px 10px;border-radius:20px;margin:8px 0 0;display:inline-flex;align-items:center;gap:5px;position:relative;z-index:1}
+.sb-info{padding:7px 18px;font-size:12px;color:var(--mid);background:#f1f3f4;border-bottom:1px solid var(--border);flex-shrink:0}
+
+.pllist{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#dadce0 transparent}
+.pllist::-webkit-scrollbar{width:5px}
+.pllist::-webkit-scrollbar-thumb{background:#dadce0;border-radius:3px}
+.grplbl{padding:9px 18px 5px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--light);background:#f8f9fa;border-bottom:1px solid #f1f3f4;position:sticky;top:0;z-index:5}
+.pi{display:flex;align-items:center;gap:12px;padding:10px 18px;cursor:pointer;border-bottom:1px solid #f1f3f4;transition:background .15s;position:relative}
+.pi::after{content:'›';position:absolute;right:14px;color:#dadce0;font-size:20px;transition:all .15s}
+.pi:hover{background:#f8f9fa}.pi:hover::after{color:var(--mid)}
+.pi.sel{background:#e8f0fe}
+.piico{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.pinf{flex:1;min-width:0}
+.pinm{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pism{font-size:11px;color:var(--mid);margin-top:1px}
+/* photo thumbnail in list */
+.pi-thumb{width:38px;height:38px;border-radius:8px;object-fit:cover;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+.c-mohalla{background:#fff8e1}.c-bridge{background:#e8eaf6}.c-school{background:#e8f5e9}
+.c-mosque{background:#fce4ec}.c-imambargah{background:#f3e5f5}.c-health{background:#fce4ec}
+.c-nature{background:#e0f2f1}.c-park{background:#f1f8e9}.c-shop{background:#f9f0ff}
+.c-govt{background:#e3f2fd}.c-resort{background:#fff3e0}
+
+.sb-ft{padding:10px 18px;background:#f8f9fa;border-top:1px solid var(--border);flex-shrink:0;font-size:11px;color:var(--light);text-align:center;line-height:1.7}
+.sb-ft a{color:var(--blue);text-decoration:none}
+.sb-ft a:hover{text-decoration:underline}
+
+/* ══ SEARCH BAR ═════════════════════════════ */
+.topbar{position:absolute;top:14px;left:394px;right:14px;z-index:800;display:flex;align-items:center;gap:10px;pointer-events:none;transition:left .35s}
+.topbar.wide{left:14px}
+.sbox{flex:1;max-width:500px;height:50px;background:#fff;border-radius:28px;display:flex;align-items:center;gap:8px;padding:0 14px 0 16px;box-shadow:var(--sh2);pointer-events:all;border:2px solid transparent;transition:border-color .2s,box-shadow .2s}
+.sbox:focus-within{border-color:var(--blue);box-shadow:0 4px 20px rgba(26,115,232,.25)}
+.sbox input{flex:1;border:none;outline:none;font-family:'Roboto',sans-serif;font-size:15px;color:var(--text);background:transparent}
+.sbox input::placeholder{color:var(--light)}
+.sico{font-size:18px;flex-shrink:0;cursor:default}
+.sclr{background:none;border:none;cursor:pointer;color:var(--light);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .2s;font-size:14px}
+.sclr:hover{background:#f1f3f4}
+/* Voice btn */
+.voicebtn{background:none;border:none;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s;flex-shrink:0}
+.voicebtn:hover{background:#f1f3f4}
+.voicebtn.listening{background:#fce8e6;animation:pulse-mic .8s ease infinite}
+@keyframes pulse-mic{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+/* AI search btn */
+.aibtn{background:linear-gradient(135deg,#7c4dff,#1a73e8);border:none;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .2s;flex-shrink:0;box-shadow:0 2px 8px rgba(124,77,255,.4)}
+.aibtn:hover{transform:scale(1.1);box-shadow:0 4px 12px rgba(124,77,255,.5)}
+.aibtn.loading{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hbtn{width:50px;height:50px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:var(--sh2);transition:all .2s;pointer-events:all;text-decoration:none;color:inherit}
+.hbtn:hover{box-shadow:var(--sh3);transform:scale(1.06);background:#f8f9fa}
+
+/* AI result box */
+.ai-result{
+  position:absolute;top:74px;left:394px;right:14px;z-index:799;max-width:500px;
+  background:#fff;border-radius:16px;box-shadow:var(--sh3);padding:14px 16px;
+  border-left:4px solid var(--purple);display:none;
+  animation:slidedown .25s ease;transition:left .35s;
+}
+.ai-result.wide{left:14px}
+@keyframes slidedown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.ai-result.show{display:block}
+.air-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--purple);margin-bottom:6px}
+.air-text{font-size:14px;color:var(--text);line-height:1.6}
+.air-close{float:right;background:none;border:none;cursor:pointer;font-size:16px;color:var(--light);margin-top:-2px}
+
+/* ══ PILLS ═══════════════════════════════════ */
+.pills{position:absolute;top:76px;left:394px;right:14px;z-index:798;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;transition:left .35s,top .2s}
+.pills.wide{left:14px}
+.pills.pushed{top:138px}
+.pills::-webkit-scrollbar{display:none}
+.pill{display:flex;align-items:center;gap:5px;padding:7px 15px;border-radius:20px;background:#fff;border:1.5px solid transparent;cursor:pointer;white-space:nowrap;font-family:'Roboto',sans-serif;font-size:13px;font-weight:500;color:var(--text);box-shadow:var(--sh1);transition:all .18s;flex-shrink:0}
+.pill:hover{box-shadow:var(--sh2)}
+.pill.on{background:#e8f0fe;color:var(--blue);border-color:var(--blue)}
+
+/* ══ MAP CONTROLS ════════════════════════════ */
+.mctrls{position:absolute;right:14px;bottom:74px;z-index:800;display:flex;flex-direction:column;gap:2px}
+.mc{width:42px;height:42px;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--text);box-shadow:var(--sh1);transition:all .18s}
+.mc:first-child{border-radius:8px 8px 0 0}.mc:last-child{border-radius:0 0 8px 8px}
+.mcsep{height:1px;background:var(--border);width:42px}
+.mc:hover{background:#f8f9fa;box-shadow:var(--sh2)}
+.mcsat{margin-top:10px;border-radius:8px!important}
+.mchome{margin-top:4px;border-radius:8px!important}
+
+/* tile selector */
+.tilemenu{position:absolute;right:60px;bottom:74px;z-index:801;background:#fff;border-radius:12px;box-shadow:var(--sh3);overflow:hidden;display:none;min-width:160px}
+.tilemenu.open{display:block;animation:slidedown .2s ease}
+.tmopt{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:13px;transition:background .15s}
+.tmopt:hover{background:#f8f9fa}
+.tmopt.on{background:#e8f0fe;color:var(--blue);font-weight:500}
+
+/* ══ BOTTOM BAR ═════════════════════════════ */
+.btm{position:absolute;bottom:0;left:380px;right:0;height:54px;background:#fff;box-shadow:0 -2px 10px rgba(0,0,0,.1);z-index:450;display:flex;align-items:center;justify-content:space-between;padding:0 16px;transition:left .35s}
+.btm.full{left:0}
+.btl{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--mid)}
+.btr{display:flex;align-items:center;gap:8px}
+.addbtn{display:flex;align-items:center;gap:8px;padding:9px 20px;background:var(--blue);color:#fff;border:none;border-radius:22px;font-family:'Google Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;box-shadow:0 2px 10px rgba(26,115,232,.35);transition:all .25s}
+.addbtn:hover{background:var(--blue-d);transform:translateY(-1px);box-shadow:0 4px 16px rgba(26,115,232,.5)}
+.iconbtn{display:flex;align-items:center;gap:5px;padding:9px 12px;background:transparent;color:var(--mid);border:1.5px solid var(--border);border-radius:22px;font-family:'Roboto',sans-serif;font-size:12px;cursor:pointer;text-decoration:none;transition:all .2s}
+.iconbtn:hover{background:#f1f3f4;border-color:var(--mid)}
+
+/* ══ DETAIL PANEL ════════════════════════════ */
+.dp{position:absolute;left:0;top:0;width:380px;height:100%;background:#fff;z-index:600;transform:translateX(-100%);transition:transform .35s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:4px 0 24px rgba(0,0,0,.18)}
+.dp.open{transform:translateX(0)}
+.dp-img{flex-shrink:0;position:relative;overflow:hidden}
+.dp-img-photos{height:200px;display:flex;overflow-x:auto;scrollbar-width:none;gap:2px}
+.dp-img-photos::-webkit-scrollbar{display:none}
+.dp-img-photo{height:200px;min-width:200px;object-fit:cover;flex-shrink:0}
+.dp-img-placeholder{height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;flex:1}
+.dp-back{position:absolute;top:12px;left:12px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.92);border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh1);z-index:5;transition:all .2s}
+.dp-back:hover{background:#fff;transform:scale(1.05)}
+/* photo upload btn */
+.dp-addphoto{position:absolute;top:12px;right:12px;padding:6px 12px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:16px;font-size:12px;cursor:pointer;z-index:5;display:flex;align-items:center;gap:5px;transition:background .2s}
+.dp-addphoto:hover{background:rgba(0,0,0,.8)}
+.dp-icon{font-size:62px;filter:drop-shadow(0 8px 24px rgba(0,0,0,.4))}
+.dp-body{padding:18px 20px;flex:1;overflow-y:auto}
+.dp-name{font-family:'Google Sans',sans-serif;font-size:21px;font-weight:600;color:var(--text);margin-bottom:5px;line-height:1.25}
+.dp-chip{display:inline-block;padding:4px 12px;border-radius:14px;font-size:12px;font-weight:500;margin-bottom:12px}
+.dp-desc{font-size:14px;color:var(--mid);line-height:1.75;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.dp-row{display:flex;align-items:flex-start;gap:10px;padding:5px 0;font-size:13px;color:var(--mid)}
+.dp-ri{font-size:17px;flex-shrink:0;margin-top:1px}
+.dp-acts{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.dpact{flex:1;min-width:80px;padding:11px 8px;border-radius:10px;border:none;cursor:pointer;font-family:'Roboto',sans-serif;font-size:12px;font-weight:500;transition:all .2s;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:5px}
+.dpdir{background:#e8f0fe;color:var(--blue)}.dpdir:hover{background:#d2e3fc}
+.dpshr{background:#f1f3f4;color:var(--text)}.dpshr:hover{background:#e8eaed}
+.dprev{background:#fff3e0;color:var(--amber)}.dprev:hover{background:#ffe0b2}
+
+/* ══ ADD MODAL ═══════════════════════════════ */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.ov.open{display:flex;animation:fdin .25s ease}
+@keyframes fdin{from{opacity:0}to{opacity:1}}
+.modal{background:#fff;border-radius:24px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.35);animation:mup .3s cubic-bezier(.4,0,.2,1)}
+@keyframes mup{from{opacity:0;transform:translateY(28px) scale(.96)}to{opacity:1;transform:none}}
+.mhd{padding:20px 22px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.mtit{font-family:'Google Sans',sans-serif;font-size:19px;font-weight:600}
+.mx{width:34px;height:34px;border-radius:50%;border:none;background:#f1f3f4;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.mx:hover{background:#e8eaed}
+.mbd{padding:18px 22px 22px}
+.mtip{background:#e8f0fe;color:#1557b0;border-radius:10px;padding:11px 14px;font-size:13px;line-height:1.5;margin-bottom:16px;display:flex;gap:9px}
+.fg{margin-bottom:13px}
+.fg label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--mid);margin-bottom:4px}
+.fg input,.fg select,.fg textarea{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Roboto',sans-serif;font-size:14px;color:var(--text);background:#fafafa;transition:all .2s;outline:none}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(26,115,232,.1)}
+.fg textarea{resize:vertical;min-height:80px}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* photo upload area */
+.photozone{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;background:#fafafa;margin-bottom:13px}
+.photozone:hover{border-color:var(--blue);background:#f0f6ff}
+.photozone input{display:none}
+.photozone-lbl{font-size:13px;color:var(--mid)}
+.photozone-lbl strong{color:var(--blue)}
+.photo-previews{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.pprev{width:60px;height:60px;border-radius:8px;object-fit:cover;border:1.5px solid var(--border)}
+.msub{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:12px;font-family:'Google Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:8px}
+.msub:hover{background:var(--blue-d);transform:translateY(-1px);box-shadow:0 4px 16px rgba(26,115,232,.4)}
+.mfb{margin-top:10px;padding:10px 14px;border-radius:10px;font-size:13px;display:none}
+.mfb.ok{background:#e8f5e9;color:#188038;display:block}
+.mfb.err{background:#fce8e6;color:#d93025;display:block}
+
+/* ══ VOICE OVERLAY ════════════════════════════ */
+.voice-ov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:3000;display:none;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+.voice-ov.on{display:flex}
+.voice-ring{width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;animation:vring 1.2s ease infinite;font-size:52px;margin-bottom:20px}
+@keyframes vring{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,255,255,.3)}50%{transform:scale(1.06);box-shadow:0 0 0 20px rgba(255,255,255,0)}}
+.voice-txt{color:#fff;font-size:18px;font-family:'Google Sans',sans-serif;margin-bottom:8px}
+.voice-hint{color:rgba(255,255,255,.6);font-size:13px;margin-bottom:24px}
+.voice-result{color:#81d4fa;font-size:15px;min-height:24px;font-weight:500}
+.voice-cancel{padding:10px 24px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:22px;font-size:14px;cursor:pointer;margin-top:20px;transition:background .2s}
+.voice-cancel:hover{background:rgba(255,255,255,.25)}
+
+/* ══ TOAST ════════════════════════════════════ */
+.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(14px);background:rgba(32,33,36,.92);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:4000;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;box-shadow:var(--sh2)}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ══ MARKERS ═════════════════════════════════ */
+.mk{display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.mkpin{width:38px;height:38px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.3);border:2.5px solid rgba(255,255,255,.95);transition:transform .2s cubic-bezier(.4,0,.2,1)}
+.mk:hover .mkpin{transform:rotate(-45deg) scale(1.25)}
+.mke{transform:rotate(45deg);font-size:16px;line-height:1}
+.mklbl{margin-top:4px;background:rgba(255,255,255,.95);padding:2px 7px;border-radius:9px;font-size:10px;font-weight:600;color:#202124;white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 4px rgba(0,0,0,.14)}
+/* has photo indicator */
+.mk-has-photo .mklbl::before{content:'📷 ';font-size:9px}
+
+.g-mohalla{background:linear-gradient(135deg,#d84315,#ff7043)}
+.g-bridge{background:linear-gradient(135deg,#283593,#5c6bc0)}
+.g-school{background:linear-gradient(135deg,#1b5e20,#43a047)}
+.g-mosque{background:linear-gradient(135deg,#1a237e,#3949ab)}
+.g-imambargah{background:linear-gradient(135deg,#4a148c,#7b1fa2)}
+.g-health{background:linear-gradient(135deg,#b71c1c,#ef5350)}
+.g-nature{background:linear-gradient(135deg,#004d40,#00897b)}
+.g-park{background:linear-gradient(135deg,#33691e,#7cb342)}
+.g-shop{background:linear-gradient(135deg,#4a0072,#ab47bc)}
+.g-govt{background:linear-gradient(135deg,#0d47a1,#1976d2)}
+.g-resort{background:linear-gradient(135deg,#bf360c,#f4511e)}
+
+/* ══ POPUP ════════════════════════════════════ */
+.leaflet-popup-content-wrapper{border-radius:16px!important;padding:0!important;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.22)!important;border:none!important}
+.leaflet-popup-content{margin:0!important;width:268px!important}
+.puh{padding:12px 14px 10px}
+.puico{font-size:22px;margin-bottom:4px}
+.punm{font-family:'Google Sans',sans-serif;font-size:14px;font-weight:600;color:#fff;margin-bottom:2px;line-height:1.3}
+.puct{font-size:10px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:.5px}
+.pub{padding:10px 14px 12px;background:#fff}
+/* small photo in popup */
+.puphotos{display:flex;gap:4px;margin-bottom:9px;overflow:hidden;border-radius:8px;max-height:64px}
+.puphoto{width:80px;height:64px;object-fit:cover;flex-shrink:0}
+.pud{font-size:12px;color:var(--mid);line-height:1.5;margin-bottom:9px}
+.pubtns{display:flex;gap:6px}
+.pubtn{flex:1;padding:7px;border-radius:16px;border:none;cursor:pointer;font-family:'Roboto',sans-serif;font-size:12px;font-weight:500;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:4px;text-decoration:none}
+.pup{background:var(--blue);color:#fff}.pup:hover{background:var(--blue-d)}
+.pus{background:#f1f3f4;color:var(--text)}.pus:hover{background:#e8eaed}
+
+.nores{padding:40px 20px;text-align:center;color:var(--light)}
+
+/* ══ LANGUAGE SWITCHER ════════════════════════ */
+.langmenu{position:absolute;right:14px;top:80px;z-index:801;background:#fff;border-radius:12px;box-shadow:var(--sh3);overflow:hidden;display:none;min-width:170px}
+.langmenu.open{display:block;animation:slidedown .2s ease}
+.lmopt{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;font-size:14px;transition:background .15s}
+.lmopt:hover{background:#f8f9fa}
+.lmopt.on{background:#e8f0fe;color:var(--blue);font-weight:500}
+.lmflag{font-size:18px}
+
+/* RTL support for Urdu */
+html[dir="rtl"] body{direction:rtl}
+html[dir="rtl"] .sb-name,html[dir="rtl"] .pinm,html[dir="rtl"] .dpName,html[dir="rtl"] .dp-name{font-family:'Noto Nastaliq Urdu',serif}
+html[dir="rtl"] .pi::after{transform:rotate(180deg);right:auto;left:14px}
+html[dir="rtl"] .pi{padding-right:18px;padding-left:34px}
+html[dir="rtl"] .sb.hide{transform:translateX(380px)}
+html[dir="rtl"] .dp{right:0;left:auto;transform:translateX(100%);box-shadow:-4px 0 24px rgba(0,0,0,.18)}
+html[dir="rtl"] .dp.open{transform:translateX(0)}
+.lang-bo{font-family:'Noto Serif Tibetan',serif}
+.lang-hi{font-family:'Noto Sans Devanagari',sans-serif}
+.lang-ur{font-family:'Noto Nastaliq Urdu',serif}
+
+/* ══ ROUTE PLANNER ════════════════════════════ */
+.routebtn{position:absolute;right:14px;top:138px;z-index:800;background:#fff;border:none;border-radius:22px;padding:9px 16px;box-shadow:var(--sh1);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:6px;transition:all .2s}
+.routebtn:hover{box-shadow:var(--sh2)}
+.routebtn.active{background:#e8f0fe;color:var(--blue)}
+.routepanel{position:absolute;top:138px;right:14px;z-index:801;background:#fff;border-radius:14px;box-shadow:var(--sh3);padding:14px 16px;max-width:260px;display:none}
+.routepanel.show{display:block;animation:slidedown .25s ease}
+.routepanel-title{font-family:'Google Sans',sans-serif;font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.routepanel-step{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;color:var(--mid)}
+.routepanel-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.routepanel-dot.start{background:#188038}
+.routepanel-dot.end{background:#d93025}
+.routepanel-info{font-size:12px;color:var(--mid);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.routepanel-clear{width:100%;margin-top:10px;padding:8px;background:#f1f3f4;border:none;border-radius:8px;font-size:12px;cursor:pointer;color:var(--text);transition:background .2s}
+.routepanel-clear:hover{background:#e8eaed}
+
+/* ══ ANNOUNCEMENTS BANNER ═════════════════════ */
+.annbar{position:absolute;top:0;left:0;right:0;z-index:850;background:linear-gradient(135deg,#7c4dff,#536dfe);color:#fff;display:none;align-items:center;gap:12px;padding:10px 18px;font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.annbar.show{display:flex;animation:slidedown .3s ease}
+.annbar.show ~ #app .topbar,.app-shifted .topbar{top:54px!important}
+.ann-icon{font-size:18px;flex-shrink:0}
+.ann-content{flex:1;min-width:0}
+.ann-title{font-weight:600;margin-right:6px}
+.ann-nav{display:flex;gap:4px;flex-shrink:0}
+.ann-navbtn{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.2);border:none;color:#fff;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.ann-navbtn:hover{background:rgba(255,255,255,.35)}
+.ann-close{background:none;border:none;color:#fff;cursor:pointer;font-size:16px;opacity:.8;flex-shrink:0}
+.ann-close:hover{opacity:1}
+.ann-urgent{background:linear-gradient(135deg,#d93025,#ff5252)}
+.ann-prayer{background:linear-gradient(135deg,#00897b,#26a69a)}
+.ann-event{background:linear-gradient(135deg,#f9a825,#ffb300)}
+
+/* shift everything down when banner shows */
+.shell-shift{padding-top:46px}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="sp-stars" id="stars"></div>
+  <svg class="sp-mts" viewBox="0 0 1440 200" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+    <path d="M0 200 L180 70 L320 150 L480 30 L640 120 L800 10 L960 100 L1120 50 L1280 130 L1440 40 L1440 200Z" fill="rgba(255,255,255,0.04)"/>
+    <path d="M0 200 L200 110 L360 170 L520 80 L700 140 L880 50 L1040 120 L1200 70 L1360 150 L1440 90 L1440 200Z" fill="rgba(255,255,255,0.06)"/>
+    <path d="M0 200 L120 170 L280 140 L440 185 L600 120 L760 165 L920 95 L1080 155 L1240 115 L1440 175 L1440 200Z" fill="rgba(6,14,36,.55)"/>
+  </svg>
+  <div class="sp-cnt">
+    <div class="sp-mo">🏔️</div>
+    <div class="sp-tit">Kanoor Village</div>
+    <div class="sp-loc">Sankoo · Kargil · Ladakh</div>
+    <div class="sp-bar"><div class="sp-prg"></div></div>
+    <div class="sp-by">
+      Built by <strong>Hakima Banoo</strong><br>
+      <a href="mailto:hakimabanoo.jk.csrl@gmail.com">hakimabanoo.jk.csrl@gmail.com</a>
+    </div>
+  </div>
+</div>
+
+<!-- INSTALL BANNER -->
+<div id="installBanner">
+  <div class="ib-txt"><strong>📱 Install Kanoor Map</strong>Add to your home screen for offline access</div>
+  <div class="ib-btns">
+    <button class="ib-install" onclick="installApp()">Install App</button>
+    <button class="ib-dismiss" onclick="document.getElementById('installBanner').classList.remove('show')">✕</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- ANNOUNCEMENT BANNER -->
+  <div class="annbar" id="annbar">
+    <span class="ann-icon" id="annIcon">📢</span>
+    <div class="ann-content">
+      <span class="ann-title" id="annTitle"></span>
+      <span id="annMsg"></span>
+    </div>
+    <div class="ann-nav" id="annNav"></div>
+    <button class="ann-close" onclick="closeAnnouncements()">✕</button>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="sb" id="sb">
+    <div class="sb-hd">
+      <div class="sb-name">🏔️ Kanoor Village Map</div>
+      <div class="sb-addr">📍 Sankoo · Kargil · Ladakh, India · PIN 194103</div>
+      <div class="sb-kpis">
+        <div class="kpi"><span class="kpi-n" id="kTotal">0</span><span class="kpi-l">Places</span></div>
+        <div class="kpi"><span class="kpi-n">10+</span><span class="kpi-l">Mohallas</span></div>
+        <div class="kpi"><span class="kpi-n">3</span><span class="kpi-l">Bridges</span></div>
+        <div class="kpi"><span class="kpi-n">4</span><span class="kpi-l">Schools</span></div>
+      </div>
+      <div class="sb-ai-badge">⚡ Smart Search enabled</div>
+    </div>
+    <div class="sb-info" id="sbInfo">Showing all places in Kanoor</div>
+    <div class="pllist" id="pllist"></div>
+    <div class="sb-ft">
+      🏔️ Built by <strong>Hakima Banoo</strong><br>
+      <a href="mailto:hakimabanoo.jk.csrl@gmail.com">hakimabanoo.jk.csrl@gmail.com</a>
+      · Kanoor Village, Kargil, Ladakh
+    </div>
+  </aside>
+
+  <div id="map"></div>
+
+  <!-- TOP SEARCH BAR -->
+  <div class="topbar" id="topbar">
+    <div class="sbox" id="sbox">
+      <span class="sico">🗺️</span>
+      <input type="text" id="sInput" placeholder="Search or ask AI — 'schools near Saserpo'..." oninput="onSearch()" onkeydown="handleSearchKey(event)"/>
+      <button class="voicebtn" id="voiceBtn" onclick="startVoice()" title="Voice Search">🎤</button>
+      <button class="aibtn" id="aiBtn" onclick="doAISearch()" title="Smart Search — try &quot;schools near Saserpo&quot;">✨</button>
+      <button class="sclr" onclick="clrSearch()">✕</button>
+    </div>
+    <a href="admin.html" class="hbtn" title="Admin">🔐</a>
+    <button class="hbtn" onclick="toggleLangMenu()" title="Language">🌐</button>
+    <button class="hbtn" onclick="toggleSb()" title="Toggle Sidebar">☰</button>
+  </div>
+
+  <!-- LANGUAGE MENU -->
+  <div class="langmenu" id="langmenu">
+    <div class="lmopt on" onclick="changeLang('en',this)"><span class="lmflag">🇬🇧</span> English</div>
+    <div class="lmopt" onclick="changeLang('ur',this)"><span class="lmflag">🇵🇰</span> اردو (Urdu)</div>
+    <div class="lmopt" onclick="changeLang('hi',this)"><span class="lmflag">🇮🇳</span> हिन्दी (Hindi)</div>
+    <div class="lmopt" onclick="changeLang('bo',this)"><span class="lmflag">🏔️</span> བོད་ཡིག (Ladakhi)</div>
+  </div>
+
+  <!-- ROUTE PLANNER BUTTON -->
+  <button class="routebtn" id="routeBtn" onclick="toggleRouteMode()">🧭 <span id="routeBtnTxt">Route Planner</span></button>
+  <div class="routepanel" id="routepanel">
+    <div class="routepanel-title">
+      <span>🧭 Route Planner</span>
+      <button class="ann-close" onclick="toggleRouteMode()" style="color:var(--text)">✕</button>
+    </div>
+    <div class="routepanel-step"><span class="routepanel-dot start"></span><span id="routeStartTxt">Click a place to set as START</span></div>
+    <div class="routepanel-step"><span class="routepanel-dot end"></span><span id="routeEndTxt">Then click another for DESTINATION</span></div>
+    <div class="routepanel-info" id="routeInfo" style="display:none"></div>
+    <button class="routepanel-clear" onclick="clearRoute()">Clear Route</button>
+  </div>
+
+  <!-- AI RESULT BOX -->
+  <div class="ai-result" id="aiResult">
+    <button class="air-close" onclick="closeAI()">✕</button>
+    <div class="air-label">🔍 Search Results</div>
+    <div class="air-text" id="aiText"></div>
+  </div>
+
+  <!-- FILTER PILLS -->
+  <div class="pills" id="pills">
+    <button class="pill on" data-cat="all" onclick="setCat(this,'all')">🗺️ All</button>
+    <button class="pill" data-cat="mohalla" onclick="setCat(this,'mohalla')">🏘️ Mohallas</button>
+    <button class="pill" data-cat="bridge" onclick="setCat(this,'bridge')">🌉 Bridges</button>
+    <button class="pill" data-cat="school" onclick="setCat(this,'school')">🏫 Schools</button>
+    <button class="pill" data-cat="mosque" onclick="setCat(this,'mosque')">🕌 Mosques</button>
+    <button class="pill" data-cat="imambargah" onclick="setCat(this,'imambargah')">🏛️ Imambargah</button>
+    <button class="pill" data-cat="health" onclick="setCat(this,'health')">🏥 Health</button>
+    <button class="pill" data-cat="nature" onclick="setCat(this,'nature')">🌊 Nature</button>
+    <button class="pill" data-cat="park" onclick="setCat(this,'park')">🌿 Parks</button>
+    <button class="pill" data-cat="shop" onclick="setCat(this,'shop')">🛍️ Shops</button>
+    <button class="pill" data-cat="govt" onclick="setCat(this,'govt')">🏛️ Govt</button>
+  </div>
+
+  <!-- MAP CONTROLS -->
+  <div class="mctrls">
+    <button class="mc" onclick="map.zoomIn()">+</button>
+    <div class="mcsep"></div>
+    <button class="mc" onclick="map.zoomOut()">−</button>
+    <button class="mc mcsat" onclick="toggleTileMenu()" id="satBtn">🗺️</button>
+    <button class="mc mchome" onclick="resetView()">🏠</button>
+  </div>
+
+  <!-- TILE MENU -->
+  <div class="tilemenu" id="tilemenu">
+    <div class="tmopt on" onclick="setTile('street',this)">🗺️ Street Map</div>
+    <div class="tmopt" onclick="setTile('satellite',this)">🛰️ Satellite</div>
+    <div class="tmopt" onclick="setTile('topo',this)">🏔️ Terrain</div>
+    <div class="tmopt" onclick="setTile('dark',this)">🌙 Dark Mode</div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="btm" id="btm">
+    <div class="btl">
+      <span>🏔️ Kanoor, Kargil</span>
+      <span>|</span>
+      <span id="coordDisp">34.3120°N 76.0120°E</span>
+      <span>|</span>
+      <span id="connStatus" title="Connection status">⚪ Checking...</span>
+    </div>
+    <div class="btr">
+      <a href="stats.html" class="iconbtn">📊 Stats</a>
+      <a href="admin.html" class="iconbtn">🔐 Admin</a>
+      <button class="addbtn" onclick="openModal()">➕ Add Place</button>
+    </div>
+  </div>
+
+  <!-- DETAIL PANEL -->
+  <div class="dp" id="dp">
+    <div class="dp-img" id="dpImg">
+      <button class="dp-back" onclick="closeDp()">←</button>
+      <button class="dp-addphoto" onclick="triggerPhotoUpload()" id="dpPhotoBtn">📷 Add Photo</button>
+      <input type="file" accept="image/*" multiple id="dpPhotoInput" style="display:none" onchange="handleDetailPhoto(event)"/>
+      <div class="dp-img-photos" id="dpPhotos">
+        <div class="dp-img-placeholder" id="dpPlaceholder">
+          <div class="dp-icon" id="dpIco"></div>
+        </div>
+      </div>
+    </div>
+    <div class="dp-body">
+      <div class="dp-name" id="dpName"></div>
+      <span class="dp-chip" id="dpChip"></span>
+      <p class="dp-desc" id="dpDesc"></p>
+      <div class="dp-row"><span class="dp-ri">📍</span><span id="dpCoords"></span></div>
+      <div class="dp-row"><span class="dp-ri">🏘️</span><span id="dpMoh"></span></div>
+      <div class="dp-acts">
+        <a class="dpact dpdir" id="dpDir" href="#" target="_blank">🧭 Directions</a>
+        <button class="dpact dpshr" onclick="shareIt()">📤 Share</button>
+        <button class="dpact dprev" onclick="writeReview()">⭐ Review</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="ov" id="addOv" onclick="ovclick(event)">
+  <div class="modal">
+    <div class="mhd">
+      <span class="mtit">➕ Add a New Place</span>
+      <button class="mx" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mbd">
+      <div class="mtip"><span>💡</span><span>Click anywhere on the map to auto-pin location. Your submission is reviewed by admin before going live.</span></div>
+      <div class="fg"><label>Place Name *</label><input type="text" id="fn" placeholder="e.g. New Masjid, Community Centre..."/></div>
+      <div class="fg"><label>Category *</label>
+        <select id="fc">
+          <option value="">Select category</option>
+          <option value="bridge">🌉 Bridge</option><option value="school">🏫 School</option>
+          <option value="mosque">🕌 Mosque</option><option value="imambargah">🏛️ Imambargah</option>
+          <option value="health">🏥 Health Center</option><option value="nature">🌊 Nature / Scenic</option>
+          <option value="mohalla">🏘️ Mohalla</option><option value="shop">🛍️ Shop</option>
+          <option value="park">🌿 Park / Garden</option><option value="govt">🏛️ Government</option>
+        </select>
+      </div>
+      <div class="fg"><label>Description</label><textarea id="fd" placeholder="Tell us about this place, its history or significance in Kanoor..."></textarea></div>
+      <div class="fg2">
+        <div class="fg"><label>Latitude</label><input type="number" id="flat" placeholder="34.3xxx" step="0.00001"/></div>
+        <div class="fg"><label>Longitude</label><input type="number" id="flng" placeholder="76.0xxx" step="0.00001"/></div>
+      </div>
+      <div class="fg"><label>Mohalla / Area</label><input type="text" id="fmoh" placeholder="e.g. Zambakha, Saltong, Grong..."/></div>
+      <!-- PHOTO UPLOAD -->
+      <label class="photozone" onclick="document.getElementById('modalPhotoInput').click()">
+        <input type="file" id="modalPhotoInput" accept="image/*" multiple style="display:none" onchange="handleModalPhotos(event)"/>
+        <div class="photozone-lbl">📷 <strong>Click to add photos</strong> (optional)<br><span style="font-size:11px">JPG, PNG — Max 3 photos</span></div>
+        <div class="photo-previews" id="photoPreviews"></div>
+      </label>
+      <div class="fg"><label>Your Name (optional)</label><input type="text" id="fsub" placeholder="Mohammad Ali, Fatima..."/></div>
+      <div class="mfb" id="mfb"></div>
+      <button class="msub" onclick="submitPl()">📍 Submit for Review</button>
+    </div>
+  </div>
+</div>
+
+<!-- VOICE OVERLAY -->
+<div class="voice-ov" id="voiceOv">
+  <div class="voice-ring">🎤</div>
+  <div class="voice-txt">Listening...</div>
+  <div class="voice-hint">Say a place name or category<br>"Show me mosques" · "Find the school" · "Saltong waterfall"</div>
+  <div class="voice-result" id="voiceResult"></div>
+  <button class="voice-cancel" onclick="stopVoice()">Cancel</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="translations.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════
+//  KANOOR VILLAGE MAP — Complete PWA with AI, Voice & Photos
+//  Built by Hakima Banoo · hakimabanoo.jk.csrl@gmail.com
+// ═══════════════════════════════════════════════════════════
+
+const CENTER=[34.3120,76.0120], ZOOM=15;
+
+// ── BACKEND API CONNECTION ────────────────────────────────
+// Same-origin by default (works when served by the Node backend).
+// Falls back to local DATA + localStorage automatically if the
+// API is unreachable (e.g. opened as a plain file, or backend is down).
+const API_BASE = location.origin.startsWith('http') ? '/api' : null;
+let backendOnline = false;
+
+async function apiGet(path){
+  if(!API_BASE) return null;
+  try{
+    const res = await fetch(API_BASE+path);
+    if(!res.ok) return null;
+    return await res.json();
+  }catch{ return null; }
+}
+async function apiPost(path, body, token){
+  if(!API_BASE) return null;
+  try{
+    const headers={'Content-Type':'application/json'};
+    if(token) headers['Authorization']='Bearer '+token;
+    const res = await fetch(API_BASE+path,{method:'POST',headers,body:JSON.stringify(body)});
+    const data = await res.json().catch(()=>({}));
+    return { ok: res.ok, status: res.status, data };
+  }catch{ return { ok:false, status:0, data:{error:'Network error'} }; }
+}
+
+// Convert backend place shape {name,category,description,...} to the
+// frontend's short shape {n,c,d,...} used throughout the UI.
+function toShortPlace(p){
+  return { id:p.id, n:p.name, c:p.category, e:p.icon||'📍', lat:p.lat, lng:p.lng, d:p.description||'', m:p.mohalla||'' };
+}
+
+
+const DATA=[
+  {id:1,n:"Zambakha Mohalla",c:"mohalla",e:"🏘️",lat:34.3158,lng:76.0078,d:"One of the lower mohallas of Kanoor village. Home to Primary School Zambakha and Masjid Zambakha. Among the oldest settlements.",m:"Zambakha"},
+  {id:2,n:"Saserpo Mohalla",c:"mohalla",e:"🏘️",lat:34.3140,lng:76.0102,d:"Central mohalla housing the vital Sub Medical Health Centre. Key residential area of Kanoor.",m:"Saserpo"},
+  {id:3,n:"Yougma Yourgo Mohalla",c:"mohalla",e:"🏘️",lat:34.3122,lng:76.0128,d:"Upper Yourgo — one of the largest mohallas in Kanoor. Site of Middle School Yourgo.",m:"Yougma Yourgo"},
+  {id:4,n:"Gongma Yourgo Mohalla",c:"mohalla",e:"🏘️",lat:34.3108,lng:76.0142,d:"Lower Yourgo mohalla, at the centre of Kanoor village along the main road.",m:"Gongma Yourgo"},
+  {id:5,n:"Grong Mohalla",c:"mohalla",e:"🏘️",lat:34.3092,lng:76.0158,d:"Prominent mohalla of Kanoor with its own masjid and strong community presence.",m:"Grong"},
+  {id:6,n:"Bargong Mohalla",c:"mohalla",e:"🏘️",lat:34.3072,lng:76.0178,d:"Bargong is the administrative heart of Kanoor — home to the Gram Panchayat Office.",m:"Bargong"},
+  {id:7,n:"Saltong Mohalla",c:"mohalla",e:"🏘️",lat:34.3188,lng:76.0068,d:"Scenic upper mohalla known for Primary School Saltong, the Rkong waterfall, and the village picnic spot.",m:"Saltong"},
+  {id:8,n:"Scarchey Mohalla",c:"mohalla",e:"🏘️",lat:34.3145,lng:76.0093,d:"Home to the Children's Park and Ahuna Resort, popular with visitors to the Suru Valley.",m:"Scarchey"},
+  {id:9,n:"Chanigund Mohalla",c:"mohalla",e:"🏘️",lat:34.3178,lng:76.0052,d:"Residential mohalla in the upper part of Kanoor village.",m:"Chanigund"},
+  {id:10,n:"Gongma Kanoor Mohalla",c:"mohalla",e:"🏘️",lat:34.3062,lng:76.0195,d:"Lower Kanoor area, one of the southernmost mohallas of the village.",m:"Gongma Kanoor"},
+  {id:11,n:"Zanging Mohalla",c:"mohalla",e:"🏘️",lat:34.3095,lng:76.0155,d:"Zanging area of Kanoor, home to Middle School Zanging.",m:"Zanging"},
+  {id:20,n:"Kanoor Main Bridge",c:"bridge",e:"🌉",lat:34.3132,lng:76.0112,d:"Primary bridge of Kanoor over the Suru River. Vital crossing connecting the village to the Suru Valley road network.",m:"Main Road"},
+  {id:21,n:"Kanoor–Trespone Bridge",c:"bridge",e:"🌉",lat:34.3148,lng:76.0088,d:"Connects Kanoor to Trespone (Gm Pora), the Block Panchayat headquarters.",m:"North End"},
+  {id:22,n:"Kanoor–Tambis Bridge",c:"bridge",e:"🌉",lat:34.3115,lng:76.0138,d:"Bridge linking Kanoor to the neighbouring village of Tambis across the Suru River.",m:"Central"},
+  {id:30,n:"Middle School Yourgo",c:"school",e:"🏫",lat:34.3120,lng:76.0130,d:"Government middle school serving students of the Yourgo area. Main educational institution of Kanoor village.",m:"Yougma Yourgo"},
+  {id:31,n:"Middle School Zanging",c:"school",e:"🏫",lat:34.3095,lng:76.0152,d:"Government middle school in Zanging locality catering to students from multiple mohallas.",m:"Zanging"},
+  {id:32,n:"Primary School Zambakha",c:"school",e:"🏫",lat:34.3160,lng:76.0075,d:"Primary school providing foundational education to children of Zambakha mohalla.",m:"Zambakha"},
+  {id:33,n:"Primary School Saltong",c:"school",e:"🏫",lat:34.3185,lng:76.0070,d:"Primary school serving the children of Saltong and surrounding upper mohallas.",m:"Saltong"},
+  {id:40,n:"Sub Medical Health Centre",c:"health",e:"🏥",lat:34.3138,lng:76.0106,d:"Primary healthcare facility for Kanoor and surrounding villages. Provides essential medical services to the entire Suru Valley area.",m:"Saserpo"},
+  {id:50,n:"Kanoor Imambargah",c:"imambargah",e:"🏛️",lat:34.3128,lng:76.0118,d:"Main Imambargah of Kanoor village — central place of religious gathering, Muharram observances and community meetings.",m:"Central"},
+  {id:60,n:"Masjid Zambakha",c:"mosque",e:"🕌",lat:34.3162,lng:76.0074,d:"Neighbourhood mosque of Zambakha mohalla for daily prayers and religious gatherings.",m:"Zambakha"},
+  {id:61,n:"Masjid Saserpo",c:"mosque",e:"🕌",lat:34.3137,lng:76.0110,d:"Mosque of Saserpo mohalla, centrally located for the convenience of residents.",m:"Saserpo"},
+  {id:62,n:"Masjid Yourgo",c:"mosque",e:"🕌",lat:34.3116,lng:76.0133,d:"Central mosque for the Yourgo area serving both upper and lower Yourgo mohallas.",m:"Yourgo"},
+  {id:63,n:"Masjid Grong",c:"mosque",e:"🕌",lat:34.3090,lng:76.0162,d:"Mosque of Grong mohalla — important place of worship for Grong and Bargong communities.",m:"Grong"},
+  {id:64,n:"Masjid Bargong",c:"mosque",e:"🕌",lat:34.3074,lng:76.0176,d:"Mosque of Bargong mohalla, situated near the Panchayat Office.",m:"Bargong"},
+  {id:65,n:"Masjid Saltong",c:"mosque",e:"🕌",lat:34.3189,lng:76.0066,d:"Mosque serving the Saltong area community in the upper reaches of Kanoor village.",m:"Saltong"},
+  {id:66,n:"Masjid Scarchey",c:"mosque",e:"🕌",lat:34.3148,lng:76.0090,d:"Mosque in Scarchey area, serving residents near the Children's Park and Ahuna Resort.",m:"Scarchey"},
+  {id:67,n:"Masjid Chanigund",c:"mosque",e:"🕌",lat:34.3180,lng:76.0048,d:"Local mosque for Chanigund mohalla residents.",m:"Chanigund"},
+  {id:68,n:"Masjid Zanging",c:"mosque",e:"🕌",lat:34.3093,lng:76.0158,d:"Mosque serving the Zanging and Gongma Yourgo area residents.",m:"Zanging"},
+  {id:70,n:"Rkong Saltong Waterfall",c:"nature",e:"🌊",lat:34.3198,lng:76.0055,d:"A stunning natural waterfall in the Rkong area of Saltong — one of the most beautiful scenic spots in the Suru Valley and a hidden gem of Kargil.",m:"Saltong"},
+  {id:71,n:"Saltong Picnic Spot",c:"nature",e:"🌿",lat:34.3192,lng:76.0060,d:"A beloved picnic spot in Saltong offering breathtaking views of the Suru Valley mountains. Popular with families and visitors.",m:"Saltong"},
+  {id:72,n:"Suru River View Point",c:"nature",e:"🏞️",lat:34.3130,lng:76.0085,d:"Scenic vantage point along the Suru River with panoramic views of the river valley and surrounding high-altitude mountains.",m:"Central"},
+  {id:80,n:"Children's Park, Scarchey",c:"park",e:"🌿",lat:34.3143,lng:76.0096,d:"Beloved children's park in Scarchey, opposite the Ahuna Resort. Main recreational space for children of Kanoor village.",m:"Scarchey"},
+  {id:81,n:"Ahuna Resort",c:"resort",e:"🏡",lat:34.3141,lng:76.0100,d:"Scenic resort in Scarchey area, welcoming visitors to the pristine Suru Valley.",m:"Scarchey"},
+  {id:90,n:"Kanoor Gram Panchayat Office",c:"govt",e:"🏛️",lat:34.3073,lng:76.0180,d:"Official Gram Panchayat Office of Kanoor village in Bargong mohalla. Handles village governance, public records and administrative matters.",m:"Bargong"},
+  {id:91,n:"Kanoor Bus Stop",c:"govt",e:"🚌",lat:34.3129,lng:76.0115,d:"Main bus stop of Kanoor village on the Sankoo–Panikhar route.",m:"Central"},
+  {id:100,n:"Chicken & Meat Shop",c:"shop",e:"🛍️",lat:34.3127,lng:76.0119,d:"Popular poultry and meat shop on the main road of Kanoor, serving residents of all mohallas.",m:"Main Road"},
+  {id:101,n:"General Stores Row",c:"shop",e:"🛍️",lat:34.3130,lng:76.0116,d:"Cluster of general provision and grocery stores along the main road.",m:"Main Road"},
+  {id:102,n:"Pharmacy / Medical Store",c:"shop",e:"💊",lat:34.3136,lng:76.0108,d:"Medical and pharmaceutical store near the Health Centre in Saserpo.",m:"Saserpo"},
+];
+
+// ── STATE ────────────────────────────────────────
+let map,ml,layers={},curTile='street';
+let cat='all', sbOpen=true, activePl=null, pendPin=null;
+let allPl=[...DATA];
+let modalPhotos=[]; // base64 photos for submission
+let deferredInstall=null;
+// Route planner state
+let routeMode=false, routeStart=null, routeEnd=null, routeLine=null, startMarker=null, endMarker=null;
+// Announcements
+let announcements=[], annIndex=0;
+
+const GRADS={
+  bridge:'linear-gradient(135deg,#283593,#5c6bc0)',school:'linear-gradient(135deg,#1b5e20,#43a047)',
+  mosque:'linear-gradient(135deg,#1a237e,#3949ab)',imambargah:'linear-gradient(135deg,#4a148c,#7b1fa2)',
+  health:'linear-gradient(135deg,#b71c1c,#ef5350)',nature:'linear-gradient(135deg,#004d40,#00897b)',
+  mohalla:'linear-gradient(135deg,#bf360c,#ff7043)',shop:'linear-gradient(135deg,#4a0072,#ab47bc)',
+  park:'linear-gradient(135deg,#33691e,#7cb342)',govt:'linear-gradient(135deg,#0d47a1,#1976d2)',
+  resort:'linear-gradient(135deg,#bf360c,#f4511e)',
+};
+const CATLBL={bridge:'🌉 Bridge',school:'🏫 School',mosque:'🕌 Mosque',imambargah:'🏛️ Imambargah',health:'🏥 Health',nature:'🌊 Nature',mohalla:'🏘️ Mohalla',shop:'🛍️ Shop',park:'🌿 Park',govt:'🏛️ Govt',resort:'🏡 Resort'};
+const CATORD=['mohalla','bridge','school','mosque','imambargah','health','nature','park','resort','govt','shop'];
+
+// ── TILES ────────────────────────────────────────
+const TILES={
+  street:{url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',opts:{maxZoom:19,subdomains:['a','b','c']}},
+  satellite:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',opts:{maxZoom:19}},
+  topo:{url:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',opts:{maxZoom:17,subdomains:['a','b','c']}},
+  dark:{url:'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',opts:{maxZoom:20}},
+};
+
+// ── INIT ─────────────────────────────────────────
+async function initMap(){
+  await loadSaved(); genStars(); registerSW();
+
+  // Guard: translations.js may fail to load (e.g. blocked file:// access).
+  // Provide a minimal English-only fallback so the app doesn't crash.
+  if(typeof KanoorI18n === 'undefined'){
+    window.KanoorI18n = {
+      currentLang:'en',
+      setLang:()=>{}, getLang:()=>'en',
+      t:(key)=>({searchPlaceholder:'Search Kanoor — schools, mosques, bridges, mohallas...',
+        routePlanner:'Route Planner', selectStart:'Click a place to set as START',
+        selectEnd:'Then click another for DESTINATION', places:'Places', mohallas:'Mohallas',
+        bridges:'Bridges', schools:'Schools', all:'All', mosques:'Mosques', imambargah:'Imambargah',
+        health:'Health', nature:'Nature', parks:'Parks', shops:'Shops', govt:'Govt',
+        addPlace:'Add Place', admin:'Admin', stats:'Stats', directions:'Directions',
+        share:'Share', review:'Review', builtBy:'Built by', routeFound:'Route found'
+      }[key] || key),
+      placeName:(p)=>p.n
+    };
+    console.warn('[Kanoor] translations.js failed to load — using English fallback.');
+  }
+
+  // Guard: Leaflet failed to load (CDN blocked/offline)
+  if(typeof L === 'undefined'){
+    console.error('[Kanoor] Leaflet failed to load — map cannot render.');
+    document.getElementById('map').innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:12px;color:#5f6368;font-family:Roboto,sans-serif;text-align:center;padding:20px">'+
+      '<div style="font-size:48px">📡</div>'+
+      '<div style="font-size:16px;font-weight:500">Map library could not load</div>'+
+      '<div style="font-size:13px;max-width:300px">This needs an internet connection to load map tiles from Leaflet/OpenStreetMap. Please check your connection and reload.</div>'+
+      '</div>';
+    // Still set up sidebar/list/search so the rest of the app is usable
+    initLang();
+    initAnnouncements();
+    renderList(allPl);
+    document.getElementById('kTotal').textContent=allPl.length;
+    return;
+  }
+
+  initLang();
+  initAnnouncements();
+
+  map=L.map('map',{center:CENTER,zoom:ZOOM,zoomControl:false,attributionControl:false});
+  layers.street=L.tileLayer(TILES.street.url,TILES.street.opts).addTo(map);
+  Object.keys(TILES).forEach(k=>{if(k!=='street')layers[k]=L.tileLayer(TILES[k].url,TILES[k].opts)});
+  ml=L.layerGroup().addTo(map);
+
+  map.on('mousemove',e=>{
+    document.getElementById('coordDisp').textContent=`${e.latlng.lat.toFixed(4)}°N ${e.latlng.lng.toFixed(4)}°E`;
+  });
+  map.on('click',e=>{
+    document.getElementById('tilemenu').classList.remove('open');
+    if(document.getElementById('addOv').classList.contains('open')){
+      document.getElementById('flat').value=e.latlng.lat.toFixed(5);
+      document.getElementById('flng').value=e.latlng.lng.toFixed(5);
+      if(pendPin)map.removeLayer(pendPin);
+      pendPin=L.marker(e.latlng,{icon:L.divIcon({className:'',html:'<div style="font-size:30px;line-height:1;margin:-30px 0 0 -10px">📍</div>',iconSize:[28,28]})}).addTo(map);
+      toast('📍 Location pinned!');
+    }
+  });
+  render();
+
+  // Check install intent from URL
+  const params=new URLSearchParams(location.search);
+  if(params.get('action')==='add') setTimeout(openModal,1500);
+}
+
+// ── TILE CONTROL ─────────────────────────────────
+function setTile(key,el){
+  map.removeLayer(layers[curTile]);
+  layers[key].addTo(map); curTile=key;
+  document.querySelectorAll('.tmopt').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('tilemenu').classList.remove('open');
+  const lbl={street:'🗺️ Street',satellite:'🛰️ Satellite',topo:'🏔️ Terrain',dark:'🌙 Dark'};
+  toast(lbl[key]+' mode');
+}
+function toggleTileMenu(){document.getElementById('tilemenu').classList.toggle('open')}
+
+// ── RENDER ────────────────────────────────────────
+function getPhotos(id){
+  try{return JSON.parse(localStorage.getItem('kanoor_photos_'+id)||'[]')}catch{return[]}
+}
+function savePhotos(id,photos){localStorage.setItem('kanoor_photos_'+id,JSON.stringify(photos))}
+
+function render(){
+  const q=document.getElementById('sInput').value.toLowerCase().trim();
+  const f=allPl.filter(p=>{
+    const co=cat==='all'||p.c===cat;
+    const so=!q||p.n.toLowerCase().includes(q)||(p.d||'').toLowerCase().includes(q)||(p.m||'').toLowerCase().includes(q)||p.c.toLowerCase().includes(q);
+    return co&&so;
+  });
+  if(ml){
+    ml.clearLayers();
+    f.forEach(p=>{
+      const hasPhoto=getPhotos(p.id).length>0;
+      const mk=L.marker([p.lat,p.lng],{icon:mkIcon(p,hasPhoto),title:p.n});
+      mk.bindPopup(mkPopup(p),{maxWidth:280});
+      mk.on('click',()=>{ if(routeMode){ handleRouteClick(p) } else { openDp(p) } });
+      mk.addTo(ml);
+    });
+  }
+  renderList(f);
+  document.getElementById('kTotal').textContent=allPl.length;
+  document.getElementById('sbInfo').textContent=q?`Found ${f.length} result${f.length!==1?'s':''} for "${q}"`:cat!=='all'?`${f.length} ${CATLBL[cat]||cat} place${f.length!==1?'s':''}`:` All ${f.length} places in Kanoor`;
+}
+
+function mkIcon(p,hasPhoto){
+  const extra=hasPhoto?'mk-has-photo':'';
+  const nm=KanoorI18n.placeName(p);
+  const h=`<div class="mk ${extra}"><div class="mkpin g-${p.c}"><span class="mke">${p.e}</span></div><div class="mklbl">${nm.split(' ')[0]}</div></div>`;
+  return L.divIcon({className:'',html:h,iconSize:[40,52],iconAnchor:[20,52],popupAnchor:[0,-54]});
+}
+
+function mkPopup(p){
+  const photos=getPhotos(p.id);
+  const nm=KanoorI18n.placeName(p);
+  const photosHtml=photos.length?`<div class="puphotos">${photos.slice(0,3).map(src=>`<img class="puphoto" src="${src}" alt="${nm}" loading="lazy"/>`).join('')}</div>`:'';
+  return`<div class="puh" style="background:${GRADS[p.c]||'#1a73e8'}"><div class="puico">${p.e}</div><div class="punm">${nm}</div><div class="puct">${CATLBL[p.c]||p.c}</div></div>
+<div class="pub">${photosHtml}<div class="pud">${(p.d||'').substring(0,90)}…</div>
+<div class="pubtns">
+  <button class="pubtn pup" onclick="openDp(allPl.find(x=>x.id===${p.id}))">📋 Details</button>
+  <a class="pubtn pus" href="https://www.google.com/maps?q=${p.lat},${p.lng}" target="_blank">🧭 Maps</a>
+</div></div>`;
+}
+
+function renderList(items){
+  const el=document.getElementById('pllist');
+  if(!items.length){el.innerHTML=`<div class="nores"><div style="font-size:40px;margin-bottom:10px">🔍</div><p>No places found. Try a different search or ask AI.</p></div>`;return}
+  const g={};items.forEach(p=>{(g[p.c]=g[p.c]||[]).push(p)});
+  let h='';
+  [...CATORD,...Object.keys(g).filter(k=>!CATORD.includes(k))].forEach(c=>{
+    if(!g[c])return;
+    h+=`<div class="grplbl">${CATLBL[c]||c} (${g[c].length})</div>`;
+    g[c].forEach(p=>{
+      const photos=getPhotos(p.id);
+      const nm=KanoorI18n.placeName(p);
+      const thumb=photos.length?`<img class="pi-thumb" src="${photos[0]}" alt="${nm}" loading="lazy"/>`:
+        `<div class="piico c-${p.c}">${p.e}</div>`;
+      h+=`<div class="pi" id="li${p.id}" onclick="flyTo(${p.id})">${thumb}<div class="pinf"><div class="pinm">${nm}</div><div class="pism">${p.m?'📍 '+p.m:CATLBL[p.c]||p.c}</div></div></div>`;
+    });
+  });
+  el.innerHTML=h;
+}
+
+// ── DETAIL PANEL ──────────────────────────────────
+function flyTo(id){
+  const p=allPl.find(x=>x.id===id);if(!p)return;
+  if(map) map.flyTo([p.lat,p.lng],17,{animate:true,duration:1.2});
+  setTimeout(()=>openDp(p),map?750:0);
+}
+
+function openDp(p){
+  if(!p)return;activePl=p;
+  const g=GRADS[p.c]||'linear-gradient(135deg,#060e24,#1565c0)';
+  const photos=getPhotos(p.id);
+  const photoEl=document.getElementById('dpPhotos');
+  const placeholder=document.getElementById('dpPlaceholder');
+  document.getElementById('dpIco').textContent=p.e;
+  placeholder.style.background=g;
+  if(photos.length){
+    photoEl.innerHTML=photos.map(src=>`<img class="dp-img-photo" src="${src}" alt="${p.n}"/>`).join('')+'<div class="dp-img-placeholder" style="display:none"></div>';
+  } else {
+    photoEl.innerHTML=`<div class="dp-img-placeholder" id="dpPlaceholder" style="background:${g}"><div class="dp-icon">${p.e}</div></div>`;
+  }
+  document.getElementById('dpName').textContent=KanoorI18n.placeName(p);
+  document.getElementById('dpChip').textContent=CATLBL[p.c]||p.c;
+  document.getElementById('dpChip').style.cssText='background:rgba(255,255,255,.18);color:#fff;padding:4px 12px;border-radius:14px;font-size:12px;font-weight:500;margin-bottom:12px;display:inline-block';
+  document.getElementById('dpDesc').textContent=p.d||'No description available.';
+  document.getElementById('dpCoords').textContent=`${p.lat.toFixed(5)}°N, ${p.lng.toFixed(5)}°E`;
+  document.getElementById('dpMoh').textContent=(p.m?p.m+' Mohalla, ':' ')+'Kanoor Village, Kargil, Ladakh';
+  document.getElementById('dpDir').href=`https://www.google.com/maps?q=${p.lat},${p.lng}`;
+  document.getElementById('dp').classList.add('open');
+  document.querySelectorAll('.pi').forEach(e=>e.classList.remove('sel'));
+  const li=document.getElementById('li'+p.id);
+  if(li){li.classList.add('sel'); if(typeof li.scrollIntoView==='function') li.scrollIntoView({behavior:'smooth',block:'nearest'})}
+}
+function closeDp(){document.getElementById('dp').classList.remove('open');activePl=null}
+
+// ── PHOTO HANDLING ────────────────────────────────
+function triggerPhotoUpload(){document.getElementById('dpPhotoInput').click()}
+function handleDetailPhoto(e){
+  if(!activePl)return;
+  const files=Array.from(e.target.files).slice(0,5);
+  const existing=getPhotos(activePl.id);
+  let added=0;
+  files.forEach(f=>{
+    const r=new FileReader();
+    r.onload=ev=>{
+      existing.push(ev.target.result);
+      added++;
+      if(added===files.length){
+        savePhotos(activePl.id,existing);
+        openDp(activePl); // refresh detail panel
+        render(); // refresh markers + list thumbnails
+        toast(`📷 ${files.length} photo${files.length>1?'s':''} added!`);
+      }
+    };
+    r.readAsDataURL(f);
+  });
+}
+function handleModalPhotos(e){
+  const files=Array.from(e.target.files).slice(0,3);
+  modalPhotos=[];
+  const prev=document.getElementById('photoPreviews');
+  prev.innerHTML='';
+  files.forEach(f=>{
+    const r=new FileReader();
+    r.onload=ev=>{
+      modalPhotos.push(ev.target.result);
+      const img=document.createElement('img');
+      img.src=ev.target.result;img.className='pprev';
+      prev.appendChild(img);
+    };
+    r.readAsDataURL(f);
+  });
+}
+
+// ── AI SEARCH ─────────────────────────────────────
+// ── SMART SEARCH ──────────────────────────────────
+// Understands natural queries like "schools near Saserpo", "mosque in Grong",
+// "waterfall", "distance to Bargong" — entirely client-side, works offline,
+// no external API needed (so it always works).
+const CAT_KEYWORDS={
+  mohalla:['mohalla','mohallas','area','areas','neighbourhood','neighborhood'],
+  bridge:['bridge','bridges','crossing'],
+  school:['school','schools','education','primary','middle'],
+  mosque:['mosque','mosques','masjid','masjids'],
+  imambargah:['imambargah','imam bargah','imam'],
+  health:['health','hospital','clinic','medical','doctor','pharmacy','dispensary'],
+  nature:['waterfall','river','view','viewpoint','scenic','nature','picnic'],
+  park:['park','parks','garden','playground'],
+  shop:['shop','shops','store','stores','market'],
+  govt:['panchayat','government','office','bus stop','bus'],
+  resort:['resort','hotel','stay'],
+};
+
+async function doAISearch(){
+  const raw=document.getElementById('sInput').value.trim();
+  if(!raw){toast('💡 Type something to search, e.g. "schools near Saserpo"');return}
+  const btn=document.getElementById('aiBtn');
+  btn.classList.add('loading');btn.textContent='⏳';
+
+  // Try the real backend AI proxy first (keeps the API key server-side).
+  if(backendOnline){
+    const res=await apiPost('/ai-search',{query:raw});
+    if(res && res.ok && res.data && res.data.text){
+      btn.classList.remove('loading');btn.textContent='✨';
+      const text=res.data.text;
+      if(text.startsWith('FILTER:')){
+        const term=text.replace('FILTER:','').split('\n')[0].trim();
+        document.getElementById('sInput').value=term;
+        runLocalSearch(term);
+        const rest=text.split('\n').slice(1).join(' ').trim();
+        if(rest) showAIResult(rest);
+        return;
+      }
+      showAIResult(text);
+      return;
+    }
+    // backend reachable but AI not configured/failed → fall through to local search
+  }
+  runLocalSearch(raw);
+  btn.classList.remove('loading');btn.textContent='✨';
+}
+
+function runLocalSearch(raw){
+  const q=raw.toLowerCase();
+
+  // 1. Detect "near X" / "in X" / "at X" → mohalla filter
+  let mohallaFilter=null;
+  const nearMatch=q.match(/(?:near|in|at|around)\s+([a-z]+)/);
+  if(nearMatch){
+    const term=nearMatch[1];
+    const allMohallas=[...new Set(allPl.map(p=>p.m).filter(Boolean))];
+    mohallaFilter=allMohallas.find(m=>m.toLowerCase().includes(term)||term.includes(m.toLowerCase().split(' ')[0]));
+  }
+
+  // 2. Detect category from keywords
+  let catFilter=null;
+  for(const [c,words] of Object.entries(CAT_KEYWORDS)){
+    if(words.some(w=>q.includes(w))){catFilter=c;break}
+  }
+
+  // 3. Run the combined filter
+  let matches=allPl.filter(p=>{
+    const catOk=!catFilter||p.c===catFilter;
+    const mohOk=!mohallaFilter||(p.m||'').toLowerCase()===mohallaFilter.toLowerCase();
+    return catOk&&mohOk;
+  });
+
+  // 3b. If a category+mohalla combo gave zero results, fall back to
+  // showing the nearest places of that category village-wide
+  let usedFallback=false;
+  if(catFilter && mohallaFilter && matches.length===0){
+    matches=allPl.filter(p=>p.c===catFilter);
+    usedFallback=true;
+  }
+
+  // 4. If nothing structured matched at all, fall back to plain text search
+  if(!catFilter && !mohallaFilter){
+    matches=allPl.filter(p=>
+      p.n.toLowerCase().includes(q)||
+      (p.d||'').toLowerCase().includes(q)||
+      (p.m||'').toLowerCase().includes(q)||
+      p.c.toLowerCase().includes(q)
+    );
+  }
+
+  // 5. Sync category pills with the filter (or reset to "All")
+  document.querySelectorAll('.pill').forEach((b,i)=>{
+    if(catFilter){
+      b.classList.toggle('on', b.dataset.cat===catFilter);
+    } else {
+      b.classList.toggle('on', i===0); // "All" is always the first pill
+    }
+  });
+  cat = catFilter || 'all';
+
+  // 6. Set the search box to the mohalla name (so the list highlights it),
+  // or clear it if we're just filtering by category
+  document.getElementById('sInput').value = mohallaFilter || '';
+  render();
+
+  // 7. Compose a helpful summary
+  let summary;
+  if(!matches.length){
+    summary=`No places found for "${raw}". Try a category (school, mosque, bridge, health, nature, shop) or a mohalla name (Saserpo, Saltong, Bargong, Zambakha...).`;
+  } else if(usedFallback){
+    summary=`${mohallaFilter} mohalla has no ${CATLBL[catFilter]||catFilter} listed. Here are all ${matches.length} ${CATLBL[catFilter]||catFilter} place${matches.length>1?'s':''} in Kanoor: ${matches.slice(0,4).map(m=>KanoorI18n.placeName(m)).join(', ')}${matches.length>4?'…':''}.`;
+  } else if(catFilter && mohallaFilter){
+    summary=`Found ${matches.length} ${CATLBL[catFilter]||catFilter} place${matches.length>1?'s':''} in ${mohallaFilter}: ${matches.slice(0,4).map(m=>KanoorI18n.placeName(m)).join(', ')}${matches.length>4?'…':''}.`;
+  } else if(catFilter){
+    summary=`Found ${matches.length} ${CATLBL[catFilter]||catFilter} place${matches.length>1?'s':''} in Kanoor: ${matches.slice(0,4).map(m=>KanoorI18n.placeName(m)).join(', ')}${matches.length>4?'…':''}.`;
+  } else if(mohallaFilter){
+    summary=`${mohallaFilter} mohalla has ${matches.length} mapped place${matches.length>1?'s':''}: ${matches.slice(0,5).map(m=>KanoorI18n.placeName(m)).join(', ')}${matches.length>5?'…':''}.`;
+  } else {
+    summary=`Found ${matches.length} result${matches.length>1?'s':''} matching "${raw}".`;
+  }
+  showAIResult(summary);
+
+  // 6. If exactly one match, fly to it
+  if(matches.length===1) setTimeout(()=>flyTo(matches[0].id),300);
+}
+
+function showAIResult(txt){
+  document.getElementById('aiText').textContent=txt;
+  const el=document.getElementById('aiResult');
+  el.classList.add('show');
+  if(!sbOpen){el.classList.add('wide')}
+  document.getElementById('pills').classList.add('pushed');
+}
+function closeAI(){
+  document.getElementById('aiResult').classList.remove('show');
+  document.getElementById('pills').classList.remove('pushed');
+}
+function handleSearchKey(e){if(e.key==='Enter')doAISearch()}
+
+
+// ── VOICE SEARCH ──────────────────────────────────
+let recognition=null;
+function startVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast('❌ Voice search not supported in this browser. Try Chrome.');return}
+  recognition=new SR();
+  recognition.lang='en-IN';recognition.interimResults=true;recognition.maxAlternatives=1;
+  document.getElementById('voiceOv').classList.add('on');
+  document.getElementById('voiceBtn').classList.add('listening');
+  recognition.onresult=e=>{
+    const t=Array.from(e.results).map(r=>r[0].transcript).join('');
+    document.getElementById('voiceResult').textContent='"'+t+'"';
+    if(e.results[0].isFinal){
+      document.getElementById('sInput').value=t;
+      stopVoice();render();
+      // trigger AI on voice result
+      setTimeout(doAISearch,300);
+    }
+  };
+  recognition.onerror=()=>stopVoice();
+  recognition.onend=()=>stopVoice();
+  recognition.start();
+}
+function stopVoice(){
+  if(recognition)try{recognition.stop()}catch(e){}
+  document.getElementById('voiceOv').classList.remove('on');
+  document.getElementById('voiceBtn').classList.remove('listening');
+}
+
+// ── SEARCH / FILTER ───────────────────────────────
+function onSearch(){closeAI();render()}
+function clrSearch(){document.getElementById('sInput').value='';closeAI();render()}
+function setCat(btn,c){
+  document.querySelectorAll('.pill').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');cat=c;render();
+}
+
+// ── SIDEBAR TOGGLE ────────────────────────────────
+function toggleSb(){
+  sbOpen=!sbOpen;
+  document.getElementById('sb').classList.toggle('hide',!sbOpen);
+  const off=sbOpen?'394px':'14px';
+  document.getElementById('topbar').style.left=off;
+  document.getElementById('pills').style.left=off;
+  document.getElementById('aiResult').style.left=off;
+  const boff=sbOpen?'380px':'0';
+  document.getElementById('btm').style.left=boff;
+  if(!sbOpen){
+    document.getElementById('topbar').classList.add('wide');
+    document.getElementById('pills').classList.add('wide');
+    document.getElementById('aiResult').classList.add('wide');
+    document.getElementById('btm').classList.add('full');
+  } else {
+    document.getElementById('topbar').classList.remove('wide');
+    document.getElementById('pills').classList.remove('wide');
+    document.getElementById('aiResult').classList.remove('wide');
+    document.getElementById('btm').classList.remove('full');
+  }
+}
+
+// ── MAP CONTROLS ──────────────────────────────────
+function resetView(){if(map)map.flyTo(CENTER,ZOOM,{animate:true,duration:1.5});toast('🏠 Kanoor Village')}
+
+// ── ADD MODAL ─────────────────────────────────────
+function openModal(){modalPhotos=[];document.getElementById('photoPreviews').innerHTML='';document.getElementById('addOv').classList.add('open');toast('💡 Click map to pin location!')}
+function closeModal(){document.getElementById('addOv').classList.remove('open');if(pendPin){map.removeLayer(pendPin);pendPin=null}}
+function ovclick(e){if(e.target===e.currentTarget)closeModal()}
+async function submitPl(){
+  const n=document.getElementById('fn').value.trim();
+  const c=document.getElementById('fc').value;
+  const d=document.getElementById('fd').value.trim();
+  const la=parseFloat(document.getElementById('flat').value);
+  const ln=parseFloat(document.getElementById('flng').value);
+  const m=document.getElementById('fmoh').value.trim();
+  const s=document.getElementById('fsub').value.trim();
+  const fb=document.getElementById('mfb');
+  if(!n||!c){fb.className='mfb err';fb.textContent='⚠️ Please enter a name and category.';return}
+  if(isNaN(la)||isNaN(ln)){fb.className='mfb err';fb.textContent='⚠️ Please click map to set location.';return}
+
+  const submitBtn=document.querySelector('.msub');
+  if(submitBtn){submitBtn.disabled=true;submitBtn.textContent='Submitting...'}
+
+  if(backendOnline){
+    const res=await apiPost('/places',{name:n,category:c,description:d,lat:la,lng:ln,mohalla:m,submitter:s||'Anonymous',photos:modalPhotos});
+    if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='📍 Submit for Review'}
+    if(res && res.ok){
+      fb.className='mfb ok';fb.textContent='✅ Submitted to the server! Your place will appear after admin review. Thank you!';
+      setTimeout(closeModal,2400);
+    } else {
+      fb.className='mfb err';fb.textContent='⚠️ '+((res&&res.data&&res.data.error)||'Could not reach server. Please try again.');
+    }
+    return;
+  }
+
+  // Offline fallback — save locally so nothing is lost
+  const id=Date.now();
+  const pl={id,n,c,d,lat:la,lng:ln,m,submitter:s||'Anonymous',at:new Date().toISOString(),status:'pending',e:catEmo(c)};
+  const pend=JSON.parse(localStorage.getItem('kanoor_pending')||'[]');
+  pend.push(pl);localStorage.setItem('kanoor_pending',JSON.stringify(pend));
+  if(modalPhotos.length) savePhotos(id,modalPhotos);
+  if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='📍 Submit for Review'}
+  fb.className='mfb ok';fb.textContent='✅ Saved locally (offline mode — no backend detected). Your place will appear after admin review once a server is connected.';
+  setTimeout(closeModal,2800);
+}
+
+// ── SHARE ─────────────────────────────────────────
+function shareIt(){
+  if(!activePl)return;
+  const t=`${activePl.e} ${activePl.n}\nKanoor Village, Kargil, Ladakh\nhttps://maps.google.com/?q=${activePl.lat},${activePl.lng}`;
+  if(navigator.share)navigator.share({title:activePl.n,text:t,url:`https://maps.google.com/?q=${activePl.lat},${activePl.lng}`});
+  else{navigator.clipboard?.writeText(t);toast('📋 Link copied!')}
+}
+function writeReview(){
+  if(!activePl)return;
+  toast('⭐ Review feature coming soon!');
+}
+
+// ── PWA ───────────────────────────────────────────
+function registerSW(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').then(()=>{
+      console.log('[PWA] Service worker registered ✅');
+    }).catch(()=>{});
+  }
+}
+
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredInstall=e;
+  setTimeout(()=>document.getElementById('installBanner').classList.add('show'),4000);
+});
+window.addEventListener('appinstalled',()=>{
+  document.getElementById('installBanner').classList.remove('show');
+  toast('📱 Kanoor Map installed on your device!');
+});
+
+function installApp(){
+  if(deferredInstall){deferredInstall.prompt();deferredInstall.userChoice.then(()=>document.getElementById('installBanner').classList.remove('show'))}
+  else toast('💡 Open in Chrome browser to install as app');
+}
+
+// ── HELPERS ───────────────────────────────────────
+async function loadSaved(){
+  // 1) Try the real backend first
+  const apiResult = await apiGet('/places');
+  if(apiResult && Array.isArray(apiResult.places)){
+    backendOnline = true;
+    allPl = apiResult.places.map(toShortPlace);
+    if(!allPl.length) allPl=[...DATA]; // backend reachable but empty — show offline data
+    updateConnStatus();
+    return;
+  }
+  // 2) Backend unreachable — fall back to bundled data + any locally
+  //    approved submissions saved from a previous offline session.
+  backendOnline = false;
+  try{
+    const x=JSON.parse(localStorage.getItem('kanoor_approved')||'[]');
+    allPl=[...DATA,...x.map(p=>({...p,n:p.name||p.n,c:p.cat||p.c,e:p.icon||p.e||'📍',m:p.mohalla||p.m||'',d:p.desc||p.d||''}))];
+  }catch{allPl=[...DATA]}
+  updateConnStatus();
+}
+function updateConnStatus(){
+  const el=document.getElementById('connStatus');
+  if(!el)return;
+  el.textContent = backendOnline ? '🟢 Live' : '⚪ Offline mode';
+  el.title = backendOnline ? 'Connected to Kanoor backend server' : 'No backend detected — showing bundled data, changes saved locally only';
+}
+function catEmo(c){return{bridge:'🌉',school:'🏫',mosque:'🕌',imambargah:'🏛️',health:'🏥',nature:'🌊',mohalla:'🏘️',shop:'🛍️',park:'🌿',govt:'🏛️',resort:'🏡'}[c]||'📍'}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2800)}
+
+// ── SPLASH STARS ──────────────────────────────────
+function genStars(){
+  const s=document.getElementById('stars');
+  for(let i=0;i<120;i++){
+    const d=document.createElement('div');d.className='sp-star';
+    const sz=1+Math.random()*2;
+    d.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*85}%;width:${sz}px;height:${sz}px;--d:${2+Math.random()*4}s;--dl:${Math.random()*5}s`;
+    s.appendChild(d);
+  }
+}
+
+// ════════════════════════════════════════════════
+// LANGUAGE SWITCHER
+// ════════════════════════════════════════════════
+function initLang(){
+  const saved=KanoorI18n.getLang();
+  KanoorI18n.setLang(saved);
+  document.querySelectorAll('.lmopt').forEach(o=>o.classList.remove('on'));
+  const idx={en:0,ur:1,hi:2,bo:3}[saved]||0;
+  document.querySelectorAll('.lmopt')[idx]?.classList.add('on');
+  applyTranslations();
+}
+function toggleLangMenu(){
+  document.getElementById('langmenu').classList.toggle('open');
+  document.getElementById('tilemenu').classList.remove('open');
+}
+function changeLang(lang,el){
+  KanoorI18n.setLang(lang);
+  document.querySelectorAll('.lmopt').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('langmenu').classList.remove('open');
+  applyTranslations();
+  render(); // re-render with translated place names
+  toast(lang==='ur'?'زبان تبدیل ہو گئی':lang==='hi'?'भाषा बदल गई':lang==='bo'?'སྐད་ཡིག་བརྗེས་སོང':'Language changed');
+}
+function applyTranslations(){
+  const t=KanoorI18n.t;
+  document.getElementById('sInput').placeholder=t('searchPlaceholder');
+  document.getElementById('routeBtnTxt').textContent=t('routePlanner');
+  document.getElementById('routeStartTxt').textContent=t('selectStart');
+  document.getElementById('routeEndTxt').textContent=t('selectEnd');
+  // Sidebar header
+  const sbName=document.querySelector('.sb-name');
+  if(sbName) sbName.innerHTML='🏔️ '+t('appTitle');
+  const sbAddr=document.querySelector('.sb-addr');
+  if(sbAddr) sbAddr.textContent='📍 '+t('appLoc')+' · PIN 194103';
+  // KPI labels
+  const kpiLabels=document.querySelectorAll('.kpi-l');
+  if(kpiLabels.length>=4){
+    kpiLabels[0].textContent=t('places');
+    kpiLabels[1].textContent=t('mohallas');
+    kpiLabels[2].textContent=t('bridges');
+    kpiLabels[3].textContent=t('schools');
+  }
+  // Pills
+  const pillMap=['all','mohalla','bridge','school','mosque','imambargah','health','nature','park','shop','govt'];
+  const pillKeys=['all','mohallas','bridges','schools','mosques','imambargah','health','nature','parks','shops','govt'];
+  document.querySelectorAll('.pill').forEach((p,i)=>{
+    const icon=p.textContent.trim().split(' ')[0];
+    p.innerHTML=icon+' '+t(pillKeys[i]);
+  });
+  // Bottom bar buttons
+  const addBtn=document.querySelector('.addbtn');
+  if(addBtn) addBtn.innerHTML='➕ '+t('addPlace');
+  document.querySelectorAll('.iconbtn').forEach(b=>{
+    if(b.textContent.includes('Stats')) b.innerHTML='📊 '+t('stats');
+    if(b.textContent.includes('Admin')) b.innerHTML='🔐 '+t('admin');
+  });
+  // Detail panel actions
+  const dpDir=document.getElementById('dpDir');
+  if(dpDir) dpDir.innerHTML='🧭 '+t('directions');
+  const dpShr=document.querySelector('.dpshr');
+  if(dpShr) dpShr.innerHTML='📤 '+t('share');
+  const dpRev=document.querySelector('.dprev');
+  if(dpRev) dpRev.innerHTML='⭐ '+t('review');
+  // Footer
+  document.querySelectorAll('.sb-ft').forEach(f=>{
+    f.innerHTML=`🏔️ ${t('builtBy')} <strong>Hakima Banoo</strong><br><a href="mailto:hakimabanoo.jk.csrl@gmail.com">hakimabanoo.jk.csrl@gmail.com</a> · Kanoor Village, Kargil, Ladakh`;
+  });
+  // Add font class for current language
+  document.body.className=document.body.className.replace(/lang-\w+/g,'').trim();
+  if(KanoorI18n.currentLang!=='en') document.body.classList.add('lang-'+KanoorI18n.currentLang);
+}
+
+// ════════════════════════════════════════════════
+// ROUTE PLANNER
+// ════════════════════════════════════════════════
+function toggleRouteMode(){
+  routeMode=!routeMode;
+  document.getElementById('routeBtn').classList.toggle('active',routeMode);
+  document.getElementById('routepanel').classList.toggle('show',routeMode);
+  if(!routeMode) clearRoute();
+  else toast('🧭 '+KanoorI18n.t('selectStart'));
+}
+function handleRouteClick(p){
+  if(!routeStart){
+    routeStart=p;
+    if(startMarker)map.removeLayer(startMarker);
+    startMarker=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:'<div style="width:24px;height:24px;border-radius:50%;background:#188038;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>',iconSize:[24,24],iconAnchor:[12,12]})}).addTo(map);
+    document.getElementById('routeStartTxt').innerHTML=`<strong>START:</strong> ${placeNameSafe(p)}`;
+    document.getElementById('routeEndTxt').textContent=KanoorI18n.t('selectEnd');
+    toast('✅ Start set: '+placeNameSafe(p));
+  } else if(!routeEnd && p.id!==routeStart.id){
+    routeEnd=p;
+    if(endMarker)map.removeLayer(endMarker);
+    endMarker=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:'<div style="width:24px;height:24px;border-radius:50%;background:#d93025;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>',iconSize:[24,24],iconAnchor:[12,12]})}).addTo(map);
+    document.getElementById('routeEndTxt').innerHTML=`<strong>END:</strong> ${placeNameSafe(p)}`;
+    drawRoute();
+  } else {
+    // reset and start over with new point
+    clearRoute(false);
+    handleRouteClick(p);
+  }
+}
+function placeNameSafe(p){ return KanoorI18n.placeName(p); }
+
+function drawRoute(){
+  if(!routeStart||!routeEnd)return;
+  if(routeLine)map.removeLayer(routeLine);
+  const latlngs=[[routeStart.lat,routeStart.lng],[routeEnd.lat,routeEnd.lng]];
+  routeLine=L.polyline(latlngs,{color:'#1a73e8',weight:4,opacity:0.8,dashArray:'8,8'}).addTo(map);
+  map.fitBounds(routeLine.getBounds(),{padding:[80,80]});
+
+  // Calculate distance (haversine)
+  const dist=haversine(routeStart.lat,routeStart.lng,routeEnd.lat,routeEnd.lng);
+  const walkMin=Math.round(dist/80); // ~80m per min walking pace
+  const info=document.getElementById('routeInfo');
+  info.style.display='block';
+  info.innerHTML=`📏 Distance: <strong>${dist<1000?Math.round(dist)+' m':(dist/1000).toFixed(2)+' km'}</strong><br>🚶 Walking time: <strong>~${walkMin} min</strong>`;
+  toast('🧭 '+KanoorI18n.t('routeFound')+'!');
+}
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371000;
+  const dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function clearRoute(resetMode=true){
+  routeStart=null;routeEnd=null;
+  if(routeLine){map.removeLayer(routeLine);routeLine=null}
+  if(startMarker){map.removeLayer(startMarker);startMarker=null}
+  if(endMarker){map.removeLayer(endMarker);endMarker=null}
+  document.getElementById('routeStartTxt').textContent=KanoorI18n.t('selectStart');
+  document.getElementById('routeEndTxt').textContent=KanoorI18n.t('selectEnd');
+  document.getElementById('routeInfo').style.display='none';
+  if(resetMode && routeMode) toast('🧭 Route cleared');
+}
+
+// ════════════════════════════════════════════════
+// ANNOUNCEMENTS
+// ════════════════════════════════════════════════
+async function initAnnouncements(){
+  if(backendOnline){
+    const res=await apiGet('/announcements');
+    if(res && res.announcements){
+      announcements=res.announcements;
+      if(announcements.length){
+        showAnnouncement(0);
+        document.getElementById('annbar').classList.add('show');
+      }
+      return;
+    }
+  }
+  // Offline fallback
+  try{
+    announcements=JSON.parse(localStorage.getItem('kanoor_announcements')||'[]');
+    const now=new Date();
+    announcements=announcements.filter(a=>a.active!==false && (!a.expiresAt || new Date(a.expiresAt)>now));
+    if(announcements.length){
+      showAnnouncement(0);
+      document.getElementById('annbar').classList.add('show');
+    }
+  }catch{announcements=[]}
+}
+function showAnnouncement(idx){
+  if(!announcements.length)return;
+  annIndex=((idx%announcements.length)+announcements.length)%announcements.length;
+  const a=announcements[annIndex];
+  const icons={info:'📢',urgent:'🚨',event:'🎉',prayer:'🕌'};
+  document.getElementById('annIcon').textContent=icons[a.type]||'📢';
+  document.getElementById('annTitle').textContent=a.title+':';
+  document.getElementById('annMsg').textContent=a.message;
+  const bar=document.getElementById('annbar');
+  bar.className='annbar show'+(a.type!=='info'?' ann-'+a.type:'');
+  // nav dots if multiple
+  const nav=document.getElementById('annNav');
+  if(announcements.length>1){
+    nav.innerHTML=`<button class="ann-navbtn" onclick="showAnnouncement(${annIndex-1})">‹</button><button class="ann-navbtn" onclick="showAnnouncement(${annIndex+1})">›</button>`;
+  } else nav.innerHTML='';
+}
+function closeAnnouncements(){
+  document.getElementById('annbar').classList.remove('show');
+}
+
+
+window.addEventListener('DOMContentLoaded',()=>{
+  initMap();
+  setTimeout(()=>{document.getElementById('splash').classList.add('gone');toast('🏔️ Welcome to Kanoor Village Map!')},3200);
+});
+</script>
+</body>
+</html>
