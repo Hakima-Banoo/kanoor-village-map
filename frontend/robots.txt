@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kanoor-village-map.vercel.app/sitemap.xml

@@ -4,7 +4,24 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>Kanoor Village Map — Kargil, Ladakh 🏔️</title>
-<meta name="description" content="Interactive map of Kanoor Village, Sankoo, Kargil, Ladakh. Built by Hakima Banoo."/>
+<meta name="google-site-verification" content="6eccecaa20446511"/>
+<meta name="description" content="Interactive map of Kanoor Village, Sankoo, Kargil, Ladakh, India. Shows all mohallas, mosques, schools, bridges, waterfall and landmarks. Built by Hakima Banoo."/>
+<meta name="keywords" content="Kanoor village map, Kanoor Kargil, Kanoor Ladakh, Sankoo village map, Kargil village map, Ladakh map, Kanoor mohalla, Kanoor imambargah, Suru Valley map, Kanoor Sankoo, village map Kargil, Hakima Banoo, kanoor village kargil ladakh"/>
+<meta name="author" content="Hakima Banoo"/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://kanoor-village-map.vercel.app"/>
+
+<!-- Open Graph — shows preview when shared on WhatsApp, Facebook, LinkedIn -->
+<meta property="og:title" content="Kanoor Village Map — Kargil, Ladakh"/>
+<meta property="og:description" content="Interactive map of Kanoor Village, Sankoo, Kargil, Ladakh. 39 landmarks including mohallas, mosques, schools, bridges and the Rkong Saltong Waterfall. Built by Hakima Banoo."/>
+<meta property="og:url" content="https://kanoor-village-map.vercel.app"/>
+<meta property="og:type" content="website"/>
+<meta property="og:locale" content="en_IN"/>
+
+<!-- Twitter/X card -->
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="Kanoor Village Map — Kargil, Ladakh 🏔️"/>
+<meta name="twitter:description" content="Interactive map of Kanoor Village, Sankoo, Kargil, Ladakh. 39 real landmarks in 4 languages. Built by Hakima Banoo."/>
 <meta name="theme-color" content="#1a73e8"/>
 <link rel="manifest" href="manifest.json"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -594,7 +611,7 @@ const CENTER=[34.3120,76.0120], ZOOM=15;
 // Same-origin by default (works when served by the Node backend).
 // Falls back to local DATA + localStorage automatically if the
 // API is unreachable (e.g. opened as a plain file, or backend is down).
-const API_BASE = location.origin.startsWith('http') ? '/api' : null;
+const API_BASE = 'https://kanoor-village-map.onrender.com/api';
 let backendOnline = false;
 
 async function apiGet(path){
